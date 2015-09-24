@@ -15,7 +15,7 @@ jQuery(document).ready(function($) {
 		message_container.removeClass('success_message error_message').addClass('working_message');
 		message_container.html(objectL10n.oa_admin_js_1);
 		
-		jQuery.post(ajaxurl,data, function(response) {				
+		jQuery.post(ajaxurl,data, function(response) {	
 			/* CURL/FSOCKOPEN Radio Boxs */
 			var radio_curl = jQuery("#oa_loudvoice_api_connection_handler_curl");			
 			var radio_fsockopen = jQuery("#oa_loudvoice_api_connection_handler_fsockopen");					
