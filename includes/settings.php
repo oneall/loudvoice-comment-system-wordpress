@@ -3,87 +3,30 @@
 /**
  * Available Providers
  */
+$oa_loudvoice_providers = array();
+$oa_loudvoice_providers ['battlenet'] = 'Battle.net';
+$oa_loudvoice_providers ['blogger'] = 'Blogger';
+$oa_loudvoice_providers ['dribbble'] = 'Dribbble';
+$oa_loudvoice_providers ['facebook'] = 'Facebook';
+$oa_loudvoice_providers ['foursquare'] = 'Foursquare';
+$oa_loudvoice_providers ['github'] = 'Github.com';
+$oa_loudvoice_providers ['instagram'] = 'Instagram';
+$oa_loudvoice_providers ['linkedin'] = 'LinkedIn';
+$oa_loudvoice_providers ['livejournal'] = 'LiveJournal';
+$oa_loudvoice_providers ['mailru'] = 'Mail.ru';
+$oa_loudvoice_providers ['odnoklassniki'] = 'Odnoklassniki';
+$oa_loudvoice_providers ['paypal'] = 'PayPal';
+$oa_loudvoice_providers ['reddit'] = 'Reddit';
+$oa_loudvoice_providers ['skyrock'] = 'Skyrock.com';
+$oa_loudvoice_providers ['stackexchange'] = 'StackExchange';
+$oa_loudvoice_providers ['steam'] = 'Steam';
+$oa_loudvoice_providers ['twitch'] = 'Twitch.tv';
+$oa_loudvoice_providers ['twitter'] = 'Twitter';
+$oa_loudvoice_providers ['vimeo'] = 'Vimeo';
+$oa_loudvoice_providers ['vkontakte'] = 'VKontakte';
+$oa_loudvoice_providers ['windowslive'] = 'Windows Live';
+$oa_loudvoice_providers ['wordpress'] = 'WordPress.com';
+$oa_loudvoice_providers ['yahoo'] = 'Yahoo';
+$oa_loudvoice_providers ['youtube'] = 'YouTube';
+$oa_loudvoice_providers ['amazon'] = 'Amazon';
 
-$oa_social_login_providers = array(
-  'amazon' => array(
-    'name' => 'Amazon',
-  ),
-  'battlenet' => array(
-	'name' => 'Battle.net',
-  ),
-  'blogger' => array(
-    'name' => 'Blogger',
-  ),
-  'disqus' => array(
-    'name' => 'Disqus',
-  ),
-  'facebook' => array(
-    'name' => 'Facebook',
-  ),
-  'foursquare' => array(
-    'name' => 'Foursquare',
-  ),
-  'github' => array(
-    'name' => 'Github.com',
-  ),
-  'google' => array(
-    'name' => 'Google',
-  ),
-  'instagram' => array(
-    'name' => 'Instagram',
-  ),
-  'linkedin' => array(
-    'name' => 'LinkedIn',
-  ),
-  'livejournal' => array(
-    'name' => 'LiveJournal',
-  ),
-  'mailru' => array(
-    'name' => 'Mail.ru',
-  ),
-  'odnoklassniki' => array(
-    'name' => 'Odnoklassniki',
-  ),
-  'openid' => array(
-    'name' => 'OpenID',
-  ),
-  'paypal' => array(
-    'name' => 'PayPal',
-  ),
-  'reddit' => array(
-    'name' => 'Reddit',
-  ),
-  'skyrock' => array(
-    'name' => 'Skyrock.com',
-  ),
-  'stackexchange' => array(
-    'name' => 'StackExchange',
-  ),
-  'steam' => array(
-    'name' => 'Steam',
-  ),
-  'twitch' => array(
-    'name' => 'Twitch.tv',
-  ),
-  'twitter' => array(
-    'name' => 'Twitter',
-  ),
-  'vimeo' => array(
-    'name' => 'Vimeo',
-  ),
-  'vkontakte' => array(
-    'name' => 'VKontakte',
-  ),
-  'windowslive' => array(
-    'name' => 'Windows Live',
-  ),
-  'wordpress' => array(
-    'name' => 'WordPress.com',
-  ),
-  'yahoo' => array(
-    'name' => 'Yahoo',
-  ),
-  'youtube' => array(
-    'name' => 'YouTube',
-  )
-);

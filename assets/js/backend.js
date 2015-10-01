@@ -1,15 +1,32 @@
 jQuery(document).ready(function($) {
 
+	/* Synchronize */
+	$('#oa_loudvoice_synchronize').click(function(){
+		var message_string, message_container, is_success, data;
+		
+		if ( ! $(this).hasClass ('disabled'))
+		{
+			alert (1);
+			$(this).addClass ('disabled');
+		
+			message_container = jQuery('#oa_loudvoice_synchronize_result');	
+			message_container.removeClass('success_message error_message').addClass('working_message');
+			message_container.html(objectL10n.oa_admin_js_1);
+		}
+		
+		return false;
+	});
+	
+
+	
 	/* Autodetect API Connection Handler */
 	$('#oa_loudvoice_autodetect_api_connection_handler').click(function(){	
-		var message_string;		
-		var message_container;
-		var is_success;	
+		var message_string, message_container, is_success, data;	
 		
-		var data = {
-				_ajax_nonce: objectL10n.oa_loudvoice_ajax_nonce,
-				action: 'autodetect_api_connection_handler'
-			};
+		data = {
+			_ajax_nonce: objectL10n.oa_loudvoice_ajax_nonce,
+			action: 'autodetect_api_connection_handler'
+		};
 		
 		message_container = jQuery('#oa_loudvoice_api_connection_handler_result');	
 		message_container.removeClass('success_message error_message').addClass('working_message');
