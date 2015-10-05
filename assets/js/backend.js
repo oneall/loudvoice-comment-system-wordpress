@@ -4,16 +4,44 @@ jQuery(document).ready(function($) {
 	$('#oa_loudvoice_synchronize').click(function(){
 		var message_string, message_container, is_success, data;
 		
+		/* Only click once */
 		if ( ! $(this).hasClass ('disabled'))
 		{
-			alert (1);
 			$(this).addClass ('disabled');
 		
 			message_container = jQuery('#oa_loudvoice_synchronize_result');	
 			message_container.removeClass('success_message error_message').addClass('working_message');
-			message_container.html(objectL10n.oa_admin_js_1);
+			message_container.html(objectL10n.oa_admin_js_2);
+			
+			data = {
+					_ajax_nonce: objectL10n.oa_loudvoice_ajax_nonce,
+					action: 'full_synchronize'
+			};
+				
+			jQuery.post(ajaxurl,data, function(response) {	
+							
+				alert (response);
+	
+				if (response == 'success_autodetect_api_curl_https')
+				{
+					is_success = true;
+					radio_curl.attr("checked", "checked");			
+					radio_use_http_1.attr("checked", "checked");					
+					message_string = objectL10n.oa_admin_js_201a;
+				}		
+			
+				message_container.removeClass('working_message');
+				message_container.html(message_string);
+			
+				if (is_success){
+					message_container.addClass('success_message');
+				} else {
+					message_container.addClass('error_message');
+				}						
+			});
+			
+			$(this).removeClass ('disabled');
 		}
-		
 		return false;
 	});
 	

@@ -3,7 +3,7 @@
 /**
  * Return an identifier for a comment
  */
-function oa_loudvoice_get_identifier_for_comment ($comment)
+function oa_loudvoice_get_reference_for_comment ($comment)
 {
 	// User Identifier
 	$commentid = (is_object ($comment) ? $comment->comment_ID : $comment);
@@ -15,13 +15,13 @@ function oa_loudvoice_get_identifier_for_comment ($comment)
 	}
 
 	// Error
-	return false;
+	return null;
 }
 
 /**
- * Return an identifier for a user
+ * Return the reference for a user
  */
-function oa_loudvoice_get_identifier_for_user ($user)
+function oa_loudvoice_get_reference_for_user ($user)
 {
 	// User Identifier
 	$userid = (is_object ($user) ? $user->ID : $user);	
@@ -33,13 +33,16 @@ function oa_loudvoice_get_identifier_for_user ($user)
 	}
 
 	// Error
-	return false;
+	return null;
 }
 
+
+
+
 /**
- * Return an identifier for a post
+ * Return the reference of a post
  */
-function oa_loudvoice_get_identifier_for_post ($post)
+function oa_loudvoice_get_reference_for_post ($post)
 {
 	// Post Identifier
 	$postid = (is_object ($post) ? $post->ID : $post);
@@ -51,7 +54,7 @@ function oa_loudvoice_get_identifier_for_post ($post)
 	}
 	
 	// Error
-	return false;
+	return null;
 }
 
 /**
@@ -148,13 +151,12 @@ function  oa_loudvoice_is_valid_uuid ($uuid)
 /**
  * Send an API request by using the given handler
  */
-function oa_loudvoice_do_api_request_endpoint ($endpoint)
+function oa_loudvoice_do_api_request_endpoint ($endpoint, $api_opts = array())
 {
 	// Read settings
 	$settings = get_option ('oa_loudvoice_settings');
 	
 	// Options
-	$api_opts = array();
 	$api_opts ['api_key'] = (!empty ($settings ['api_key']) ? $settings ['api_key'] : '');
 	$api_opts ['api_secret'] = (!empty ($settings ['api_secret']) ? $settings ['api_secret'] : '');
 	
@@ -451,6 +453,19 @@ function oa_loudvoice_curl_request ($url, $options = array (), $timeout = 15)
 		}
 	}
 	
+	// Custom Request
+	if (!empty ($options ['method']))
+	{
+		curl_setopt($curl, CURLOPT_CUSTOMREQUEST, strtoupper ($options ['method']));
+	}
+	
+	// Post Data
+	if ( ! empty ($options ['post_data']))
+	{
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $options ['post_data']);
+	}			
+	
+	
 	// Make request
 	if (($http_data = curl_exec ($curl)) !== false)
 	{
@@ -465,6 +480,7 @@ function oa_loudvoice_curl_request ($url, $options = array (), $timeout = 15)
 		$result->http_error = curl_error ($curl);
 	}
 	
+
 	// Done
 	return $result;
 }

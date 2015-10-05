@@ -3,12 +3,50 @@
   width: 800px;
 }
 
+/* ********************* Messages */
+
+#oa_loudvoice .error_message {
+  color: red;
+  background: url("../img/status_error.png") no-repeat scroll 0 50% #ddd;
+  padding-left: 25px;
+  font-weight: bold;
+}
+
+#oa_loudvoice .error_message,
+#oa_loudvoice .error_message a {
+  color: red;
+  font-weight: bold;
+}
+
+#oa_loudvoice .working_message {
+  color: blue;
+  background: url("../img/status_loading.gif") no-repeat scroll 0 50% #ddd;
+  padding-left: 25px;
+  font-weight: bold;
+}
+
+#oa_loudvoice .error_message a:hover {
+  color: #C70000;
+}
+
+#oa_loudvoice .success_message {
+  color: green;
+  background: url("../img/status_ok.png") no-repeat scroll 0 50% #ddd;
+  padding-left: 25px;
+  font-weight: bold;
+}
+
 /* ********************* Boxes */
 .oa_loudvoice_box {
   border: 1px solid #CCCCCC;
   margin-bottom: 10px;
-  padding: 10px 15px;
 }
+
+.oa_loudvoice_box .oa_loudvoice_box_content{
+	padding: 10px 15px;
+}
+
+
 
 .oa_loudvoice_box .oa_loudvoice_box_title {
   border-bottom: 1px solid #ccc;
@@ -53,6 +91,16 @@
   color: #fff;
   font-weight: bold;
 }
+
+#oa_loudvoice_box_synchronize {
+  background-color: #E1EDFF;
+}
+
+#oa_loudvoice_box_synchronize .oa_loudvoice_box_footer {
+	background-color : #ddd;
+	padding: 10px;
+}
+
 
 /* ********************* Tables */
 .oa_loudvoice_table {
@@ -103,35 +151,7 @@
   background-color: #ddd;
 }
 
-.oa_loudvoice_table tr.row_foot .error_message {
-  color: red;
-  background: url("../img/status_error.png") no-repeat scroll 0 50% #ddd;
-  padding-left: 25px;
-  font-weight: bold;
-}
 
-.oa_loudvoice_table tr.row_foot .error_message,.oa_loudvoice_table tr.row_foot .error_message a {
-  color: red;
-  font-weight: bold;
-}
-
-.oa_loudvoice_table tr.row_foot .working_message {
-  color: blue;
-  background: url("../img/status_loading.gif") no-repeat scroll 0 50% #ddd;
-  padding-left: 25px;
-  font-weight: bold;
-}
-
-.oa_loudvoice_table tr.row_foot .error_message a:hover {
-  color: #C70000;
-}
-
-.oa_loudvoice_table tr.row_foot .success_message {
-  color: green;
-  background: url("../img/status_ok.png") no-repeat scroll 0 50% #ddd;
-  padding-left: 25px;
-  font-weight: bold;
-}
 
 /* ********************* Providers */
 .oa_loudvoice_table tr.row_provider td {

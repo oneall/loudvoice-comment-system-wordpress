@@ -77,7 +77,7 @@ $api_subdomain = (!empty ($oalv_settings ['api_subdomain']) ? $oalv_settings ['a
 $comments_container_id = 'oneall_loudvoice_' . mt_rand (99999, 9999999);
 
 // Page Details
-$page_identifier = oa_loudvoice_get_identifier_for_post ($post);
+$page_reference = oa_loudvoice_get_reference_for_post ($post);
 $page_title = oa_loudvoice_get_title_for_post ($post);
 $page_url = oa_loudvoice_get_link_for_post ($post);
 
@@ -166,7 +166,7 @@ $page_url = oa_loudvoice_get_link_for_post ($post);
 			var _oneall = _oneall || [];
 			_oneall.push(['loudvoice', 'set_providers', ['<?php echo implode ("','", $providers);?>']]);
 			_oneall.push(['loudvoice', 'set_page', '<?php echo $page_title;?>', '<?php echo $page_url;?>']);
-			_oneall.push(['loudvoice', 'set_reference', '<?php echo $page_identifier; ?>']);
+			_oneall.push(['loudvoice', 'set_reference', '<?php echo $page_reference; ?>']);
 			_oneall.push(['loudvoice', 'set_event', 'on_comment_added', function(data) {oa_loudvoice_import_comment ('<?php echo $post->ID; ?>', data);}]);
 			_oneall.push(['loudvoice', 'do_render_ui', '<?php echo $comments_container_id; ?>']);
 		</script>

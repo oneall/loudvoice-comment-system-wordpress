@@ -81,6 +81,7 @@ function oa_loudvoice_admin_js ($hook)
 		wp_localize_script ('oa_loudvoice_admin_js', 'objectL10n', array(
 			'oa_loudvoice_ajax_nonce' => $oa_loudvoice_ajax_nonce,
 			'oa_admin_js_1' => __ ('Contacting API - please wait this may take a few minutes ...', 'oa_loudvoice'),
+			'oa_admin_js_2' => __ ('Working - please wait this may take a few minutes ...', 'oa_loudvoice'),
 			'oa_admin_js_101' => __ ('The settings are correct - do not forget to save your changes!', 'oa_loudvoice'),
 			'oa_admin_js_111' => __ ('Please fill out each of the fields above.', 'oa_loudvoice'),
 			'oa_admin_js_112' => __ ('The subdomain does not exist. Have you filled it out correctly?', 'oa_loudvoice'),
@@ -98,7 +99,6 @@ function oa_loudvoice_admin_js ($hook)
 		));
 	}
 }
-
 
 
 /**
@@ -560,19 +560,23 @@ function oa_loudvoice_display_synchronize ()
 					else
 					{
 						?>	
-							<div class="oa_loudvoice_box" id="oa_loudvoice_box_status">
-								<div class="oa_loudvoice_box_title">
-									<?php _e ('Synchronization', 'oa_loudvoice'); ?>
+							<div class="oa_loudvoice_box" id="oa_loudvoice_box_synchronize">
+								<div class="oa_loudvoice_box_content">
+									<div class="oa_loudvoice_box_title">
+										<?php _e ('Synchronization', 'oa_loudvoice'); ?>
+									</div>
+									<p>
+										<?php _e ('Simply click the button below to start the synchronization. This process will make sure that your WordPress database is in sync with the Loudvoice platform. Please be patient as this might take a few minutes.', 'oa_loudvoice'); ?>			
+									</p>
+									<p>
+										<a class="button-secondary" id="oa_loudvoice_synchronize" href="#" ><strong><?php _e ('Start Synchronization', 'oa_loudvoice'); ?></strong></a>
+									</p>							
 								</div>
-								<p>
-									<?php _e ('Simply click the button below to start the synchronization. This process will make sure that your WordPress database is in sync with the Loudvoice platform. Please be patient as this might take a few minutes.', 'oa_loudvoice'); ?>			
-								</p>
-								<p>
-									<a class="button-secondary" id="oa_loudvoice_synchronize" href="#" ><strong><?php _e ('Start Synchronization', 'oa_loudvoice'); ?></strong></a>
-								</p>
-								<p>
-									<div id="oa_loudvoice_synchronize_result"></div>
-								</p>
+								<div class="oa_loudvoice_box_footer">
+									<div id="oa_loudvoice_synchronize_result">
+										<?php _e ('Ready for Synchronization', 'oa_loudvoice'); ?>
+									</div>
+								</div>
 							</div>
 						<?php 
 					}
@@ -628,18 +632,18 @@ function oa_loudvoice_display_settings ()
 		?>
 							<p></p>
 		<div class="oa_loudvoice_box" id="oa_loudvoice_box_status">
-			<div class="oa_loudvoice_box_title">
-									<?php _e ('Your API Account is setup correctly', 'oa_loudvoice'); ?>
-								</div>
-			<p>
-									<?php _e ('Login to your account to manage your providers and access your Social Insights.', 'oa_loudvoice'); ?>
-									<?php _e ("Determine which social networks are popular amongst your users and tailor your registration experience to increase your users' engagement.", 'oa_loudvoice'); ?>
-								</p>
-			<p>
-				<a class="button-secondary" href="https://app.oneall.com/signin/"
-					target="_blank"><strong><?php _e ('Click here to login to your account', 'oa_loudvoice'); ?></strong>
-				</a>
-			</p>
+			<div class="oa_loudvoice_box_content">
+				<div class="oa_loudvoice_box_title">
+					<?php _e ('Your API Account is setup correctly', 'oa_loudvoice'); ?>
+				</div>
+				<p>
+					<?php _e ('Login to your account to manage your providers and access your Social Insights.', 'oa_loudvoice'); ?>
+					<?php _e ("Determine which social networks are popular amongst your users and tailor your registration experience to increase your users' engagement.", 'oa_loudvoice'); ?>
+				</p>
+				<p>
+					<a class="button-secondary" href="https://app.oneall.com/signin/" target="_blank"><strong><?php _e ('Click here to login to your account', 'oa_loudvoice'); ?></strong></a>
+				</p>
+			</div>
 		</div>
 						<?php
 	}
