@@ -42,8 +42,9 @@ function oa_loudvoice_get_comments_template ($value)
 		wp_enqueue_script ('oa_loudvoice_frontend_js');
 		
 		// Create Placeholders
-		wp_localize_script ('oa_loudvoice_frontend_js', 'objectL10n', array(
-			'oa_loudvoice_ajax_nonce' => $ajax_nonce 
+		wp_localize_script ('oa_loudvoice_frontend_js', 'oa_loudvoice', array(
+			'nonce' => $ajax_nonce,
+			'ajaxurl' =>  admin_url ('admin-ajax.php')
 		));
 		
 		// Display Loudvoice

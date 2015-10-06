@@ -1,19 +1,163 @@
 <?php
 
 /**
- * Return an identifier for a comment
+ * Returns the commentid for a given token
  */
-function oa_loudvoice_get_reference_for_comment ($comment)
+function oa_loudvoice_get_commentid_for_token ($token)
 {
-	// User Identifier
-	$commentid = (is_object ($comment) ? $comment->comment_ID : $comment);
+	global $wpdb;
 
+	// Sanitize token.
+	$token = trim (strval ($token));
+
+	// The token is required.
+	if (strlen ($token) > 0)
+	{
+		// Read user for this token.
+		$sql = "SELECT cm.comment_id FROM " . $wpdb->commentmeta . " AS cm INNER JOIN " . $wpdb->comments . " AS c ON (cm.comment_id=c.comment_ID) WHERE cm.meta_key = '_oa_loudvoice_synchronized' AND cm.meta_value=%s";
+		$commentid = $wpdb->get_var ($wpdb->prepare ($sql, $token));
+	
+		// Make sure we have a result
+		if ( ! empty ($commentid) && is_numeric ($commentid))
+		{
+			return $commentid;
+		}
+	}
+	
+	// Error
+	return false;
+
+}
+
+/**
+ * Returns the LoudVoice status for a given WordPress status
+ */
+function oa_loudvoice_get_wordpress_approved_status ($moderation_status, $spam_status)
+{
+	if ($moderation_status == 'deleted')
+	{
+		return 'trash';
+	}
+	elseif ($spam_status == 'is_spam')
+	{
+		return 'spam';
+	}
+	elseif ($moderation_status == 'unapproved')
+	{
+		return 0;
+	}
+	
+	return 1;
+}
+
+
+/**
+ * Returns the LoudVoice status for a given WordPress status
+ */
+function oa_loudvoice_get_status_for_comment ($comment, $target)
+{
+	// Spam Status
+	if (strtolower (trim ($target)) == 'spam')
+	{
+		switch ($comment->comment_approved)
+		{
+			case 'spam' :
+				return 'is_spam';
+			
+			default :
+				return 'is_not_spam';
+		}
+	}
+	// Moderation Status
+	else
+	{
+		switch ($comment->comment_approved)
+		{
+			case '1' :
+				return 'approved';
+			
+			case '0' :
+			case 'spam':
+				return 'unapproved';
+			
+			case 'trash' :
+				return 'deleted';
+
+			default :
+				return 'unmoderated';
+		}
+	}
+	
+	// Error
+	return null;
+}
+
+/**
+ * Returns the avatar for a given userid
+ */
+function oa_loudvoice_get_avatar_url_for_userid ($userid)
+{
+	// Read Avatar
+	$avatar_html = get_avatar ($userid);
+	
+	// Extract src
+	if (preg_match ("/src\s*=\s*(['\"]{1})(.*?)\\1/i", $avatar_html, $matches))
+	{
+		return trim ($matches [2]);
+	}
+	
+	// Error
+	return null;
+}
+
+/**
+ * Return an identifier for a commentid
+ */
+function oa_loudvoice_get_comment_reference_for_commentid ($commentid)
+{
 	// We need the identifier
-	if (! empty ($commentid))
+	if (!empty ($commentid))
 	{
 		return 'WP-COMMENT-' . intval (trim ($commentid));
 	}
+	
+	// Error
+	return null;
+}
 
+/**
+ * Return an identifier for a comment
+ */
+function oa_loudvoice_get_comment_reference_for_comment ($comment)
+{
+	// Verify Comment
+	if (is_object ($comment) && !empty ($comment->comment_ID))
+	{
+		return oa_loudvoice_get_comment_reference_for_commentid ($comment->comment_ID);
+	}
+	
+	// Error
+	return null;
+}
+
+/**
+ * Return an identifier for a comment
+ */
+function oa_loudvoice_get_author_reference_for_comment ($comment)
+{
+	// Check if comment is set
+	if (is_object ($comment))
+	{
+		// User Identifier
+		if (!empty ($comment->user_id))
+		{
+			return oa_loudvoice_get_author_reference_for_user ($comment->user_id);
+		}
+		
+		// Guest
+		return 'WP-USER-GUEST-COMMENT-' . intval (trim ($comment->comment_ID));
+	}
+	
 	// Error
 	return null;
 }
@@ -21,23 +165,20 @@ function oa_loudvoice_get_reference_for_comment ($comment)
 /**
  * Return the reference for a user
  */
-function oa_loudvoice_get_reference_for_user ($user)
+function oa_loudvoice_get_author_reference_for_user ($user)
 {
 	// User Identifier
-	$userid = (is_object ($user) ? $user->ID : $user);	
-
+	$userid = (is_object ($user) ? $user->ID : $user);
+	
 	// We need the identifier
-	if (! empty ($userid))
+	if (!empty ($userid))
 	{
 		return 'WP-USER-' . intval (trim ($userid));
 	}
-
+	
 	// Error
 	return null;
 }
-
-
-
 
 /**
  * Return the reference of a post
@@ -46,10 +187,10 @@ function oa_loudvoice_get_reference_for_post ($post)
 {
 	// Post Identifier
 	$postid = (is_object ($post) ? $post->ID : $post);
-
+	
 	// We need the identifier
-	if (! empty ($postid))
-	{	
+	if (!empty ($postid))
+	{
 		return 'WP-POST-' . intval (trim ($postid));
 	}
 	
@@ -78,7 +219,7 @@ function oa_loudvoice_get_link_for_post ($postid)
  */
 function oa_louddvoice_is_setup ()
 {
-	//return false;
+	// return false;
 	// Read settings
 	$settings = get_option ('oa_loudvoice_settings');
 	
@@ -143,7 +284,7 @@ function oa_loudvoice_get_disabled_functions ()
 }
 
 // Check if a given v4 UUID is valid
-function  oa_loudvoice_is_valid_uuid ($uuid)
+function oa_loudvoice_is_valid_uuid ($uuid)
 {
 	return preg_match ('/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i', trim ($uuid));
 }
@@ -166,7 +307,7 @@ function oa_loudvoice_do_api_request_endpoint ($endpoint, $api_opts = array())
 	$api_subdomain = trim ($settings ['api_subdomain']);
 	
 	// Endpoint
-	$api_resource_url = ($api_connection_use_https ? 'https' : 'http') . '://' . $api_subdomain . '.api.oneall.loc/'.ltrim (trim($endpoint),'/ ');
+	$api_resource_url = ($api_connection_use_https ? 'https' : 'http') . '://' . $api_subdomain . '.api.oneall.loc/' . ltrim (trim ($endpoint), '/ ');
 	
 	// Do request
 	return oa_loudvoice_do_api_request ($api_connection_handler, $api_resource_url, $api_opts);
@@ -456,15 +597,14 @@ function oa_loudvoice_curl_request ($url, $options = array (), $timeout = 15)
 	// Custom Request
 	if (!empty ($options ['method']))
 	{
-		curl_setopt($curl, CURLOPT_CUSTOMREQUEST, strtoupper ($options ['method']));
+		curl_setopt ($curl, CURLOPT_CUSTOMREQUEST, strtoupper ($options ['method']));
 	}
 	
 	// Post Data
-	if ( ! empty ($options ['post_data']))
+	if (!empty ($options ['post_data']))
 	{
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $options ['post_data']);
-	}			
-	
+		curl_setopt ($curl, CURLOPT_POSTFIELDS, $options ['post_data']);
+	}
 	
 	// Make request
 	if (($http_data = curl_exec ($curl)) !== false)
@@ -480,7 +620,6 @@ function oa_loudvoice_curl_request ($url, $options = array (), $timeout = 15)
 		$result->http_error = curl_error ($curl);
 	}
 	
-
 	// Done
 	return $result;
 }
