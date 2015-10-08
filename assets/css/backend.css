@@ -1,6 +1,7 @@
 /* ********************* Page Wrapper */
 #oa_loudvoice {
-  width: 800px;
+  width: 860px;
+  max-width:100%;
 }
 
 /* ********************* Messages */
@@ -39,7 +40,7 @@
 /* ********************* Boxes */
 .oa_loudvoice_box {
   border: 1px solid #CCCCCC;
-  margin-bottom: 10px;
+  margin: 25px 0;
 }
 
 .oa_loudvoice_box .oa_loudvoice_box_content{
@@ -52,7 +53,8 @@
   border-bottom: 1px solid #ccc;
   font-size: 15px;
   font-weight: bold;
-  padding-bottom: 5px;
+margin: 0 10px;
+    padding: 7px 0;
 }
 
 #oa_loudvoice_box_status {
@@ -92,11 +94,16 @@
   font-weight: bold;
 }
 
-#oa_loudvoice_box_synchronize {
+#oa_loudvoice_box_export{
   background-color: #E1EDFF;
 }
 
-#oa_loudvoice_box_synchronize .oa_loudvoice_box_footer {
+#oa_loudvoice_box_import{
+  background-color: #fcecad;
+}
+
+#oa_loudvoice_box_export .oa_loudvoice_box_footer,
+#oa_loudvoice_box_import .oa_loudvoice_box_footer {
 	background-color : #ddd;
 	padding: 10px;
 }
@@ -119,7 +126,7 @@
   background-color: #3E687B;
   color: #fff;
   text-shadow: 0 1px 0 #333;
-  padding-left: 10px;
+padding: 15px 10px;
 }
 
 .oa_loudvoice_table tr.row_head th a {

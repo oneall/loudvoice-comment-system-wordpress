@@ -1,5 +1,7 @@
 <?php
 
+
+
 // Display a single comment
 function oneall_loudvoice_display_comment( $comment, $args, $depth )
 {	
@@ -57,6 +59,26 @@ $settings = get_option ('oa_loudvoice_settings');
 
 // Import providers
 GLOBAL $oa_loudvoice_providers;
+
+// Author Session
+$author_session_token = null;
+
+// Do we have author sessions?
+if (empty ($settings ['disable_author_sessions']))
+{
+	// Author sessions are enabled
+	if (is_user_logged_in ())
+	{
+		// Read the current user
+		$user = wp_get_current_user ();
+		
+		// User Found
+		if (!empty ($user->data->ID))
+		{	
+			$author_session_token = oa_loudvoice_create_author_session ($user->data->ID);			
+		}
+	}
+}
 
 // Build providers
 $providers = array();
@@ -167,6 +189,7 @@ $page_url = oa_loudvoice_get_link_for_post ($post);
 			_oneall.push(['loudvoice', 'set_providers', ['<?php echo implode ("','", $providers);?>']]);
 			_oneall.push(['loudvoice', 'set_page', '<?php echo $page_title;?>', '<?php echo $page_url;?>']);
 			_oneall.push(['loudvoice', 'set_reference', '<?php echo $page_reference; ?>']);
+			_oneall.push(['loudvoice', 'set_author_session_token', '<?php echo strval ($author_session_token); ?>']);
 			_oneall.push(['loudvoice', 'set_event', 'on_comment_added', function(data) {oa_loudvoice_import_comment ('<?php echo $post->ID; ?>', data);}]);
 			_oneall.push(['loudvoice', 'do_render_ui', '<?php echo $comments_container_id; ?>']);
 		</script>

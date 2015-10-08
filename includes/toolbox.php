@@ -1,24 +1,178 @@
 <?php
 
 /**
+ * Removes the author_session when the user logs out
+ */
+function oa_loudvoice_remove_author_session ()
+{
+	// Read User
+	$user = wp_get_current_user ();
+	if (!empty ($user->data->ID))
+	{
+		delete_user_meta ($user->data->ID, '_oa_loudvoice_author_session_token');
+		delete_user_meta ($user->data->ID, '_oa_loudvoice_author_session_expiration');
+	}
+}
+add_action ('clear_auth_cookie', ' oa_loudvoice_remove_author_session');
+
+/**
+ * Creates an author_session for the given user
+ */
+function oa_loudvoice_create_author_session ($userid, $ip_address = null)
+{
+	// Is Loudvoice running?
+	if (oa_louddvoice_is_setup ())
+	{
+		// Read the current user
+		$user = get_userdata ($userid);
+		if (!empty ($user->ID))
+		{
+			// Compte IP Address
+			if (empty ($ip_address))
+			{
+				$ip_address = oa_loudvoice_get_user_ip ();
+			}
+			// Start a new session?
+			$start_new_session = true;
+			
+			// Read Session Details
+			$tmp_author_session_token = get_user_meta ($user->ID, '_oa_loudvoice_author_session_token', true);
+			$tmp_author_session_expiration = get_user_meta ($user->ID, '_oa_loudvoice_author_session_expiration', true);
+			
+			// Session Found
+			if (!empty ($tmp_author_session_token) && !empty ($tmp_author_session_expiration) && $tmp_author_session_expiration < time ())
+			{
+				$author_session_token = $tmp_author_session_token;
+			}
+			// Not found
+			else
+			{
+				// API Data
+				$data = array(
+					'method' => 'PUT',
+					'post_data' => json_encode (array(
+						'request' => array(
+							'author_session' => array(
+								'author' => array(
+									'author_reference' => oa_loudvoice_get_author_reference_for_user ($user),
+									'name' => $user->user_login,
+									'email' => $user->user_email,
+									'website_url' => $user->user_url,
+									'picture_url' => oa_loudvoice_get_avatar_url_for_userid ($user->ID),
+									'ip_address' => $ip_address 
+								) 
+							) 
+						) 
+					)) 
+				);
+				
+				// Make Request
+				$result = oa_loudvoice_do_api_request_endpoint ('/discussions/authors/sessions.json', $data);
+				
+				// Check result
+				if (is_object ($result) and property_exists ($result, 'http_code') and ($result->http_code == 200 or $result->http_code == 201))
+				{
+					// Decode result
+					$json = @json_decode ($result->http_data);
+					
+					// Read Session Details
+					$author_session_token = $json->response->result->data->author_session->author_session_token;
+					$author_session_expiration = strtotime ($json->response->result->data->author_session->date_expiration);
+					
+					// Save Meta
+					update_user_meta ($user->ID, '_oa_loudvoice_author_session_token', $author_session_token);
+					update_user_meta ($user->ID, '_oa_loudvoice_author_session_expiration', $author_session_expiration);
+					
+					// Success
+					return $author_session_token;
+				}
+			}
+		}
+	}
+	
+	// Error
+	return null;
+}
+
+/**
+ * Cleanup of the meta
+ */
+function oa_loudvoice_cleanup_meta ($all = false)
+{
+	// Global Vars
+	global $wpdb;
+	
+	// Remove all entries
+	if ($all === true)
+	{
+		// Comment Meta
+		$sql = "DELETE * FROM " . $wpdb->commentmeta . " WHERE meta_key LIKE %s";
+		$wpdb->query ($wpdb->prepare ($sql, '_oa_loudvoice_synchronized%'));
+		
+		// Post Meta
+		$sql = "DELETE * FROM " . $wpdb->postmeta . " WHERE meta_key LIKE %s";
+		$wpdb->query ($wpdb->prepare ($sql, '_oa_loudvoice_synchronized%'));
+	}
+	// Remove superfluous entries
+	else
+	{
+		// Comment Meta
+		$sql = "DELETE cm.* FROM " . $wpdb->commentmeta . " AS cm LEFT JOIN " . $wpdb->comments . " AS c ON (cm.comment_id = c.comment_ID) WHERE cm.meta_key LIKE %s AND c.comment_ID IS NULL";
+		$wpdb->query ($wpdb->prepare ($sql, '_oa_loudvoice_synchronized%'));
+		
+		// Post Meta
+		$sql = "DELETE pm.* FROM " . $wpdb->postmeta . " AS pm LEFT JOIN " . $wpdb->posts . " AS p ON (pm.post_id = p.ID) WHERE pm.meta_key LIKE %s AND p.ID IS NULL";
+		$wpdb->query ($wpdb->prepare ($sql, '_oa_loudvoice_synchronized%'));
+	}
+}
+
+/**
+ * Returns the postid for a given token
+ */
+function oa_loudvoice_get_postid_for_token ($token)
+{
+	global $wpdb;
+	
+	// Sanitize token.
+	$token = trim (strval ($token));
+	
+	// The token is required.
+	if (strlen ($token) > 0)
+	{
+		// Read post_id for this token.
+		$sql = "SELECT pm.post_id FROM " . $wpdb->postmeta . " AS pm INNER JOIN " . $wpdb->posts . " AS p ON (pm.post_id=p.ID) WHERE pm.meta_key = '_oa_loudvoice_synchronized' AND pm.meta_value=%s";
+		$postid = $wpdb->get_var ($wpdb->prepare ($sql, $token));
+		
+		// Make sure we have a result
+		if (!empty ($postid) && is_numeric ($postid))
+		{
+			return $postid;
+		}
+	}
+	
+	// Error
+	return false;
+}
+
+/**
  * Returns the commentid for a given token
  */
 function oa_loudvoice_get_commentid_for_token ($token)
 {
 	global $wpdb;
-
+	
 	// Sanitize token.
 	$token = trim (strval ($token));
-
+	
 	// The token is required.
 	if (strlen ($token) > 0)
 	{
 		// Read user for this token.
 		$sql = "SELECT cm.comment_id FROM " . $wpdb->commentmeta . " AS cm INNER JOIN " . $wpdb->comments . " AS c ON (cm.comment_id=c.comment_ID) WHERE cm.meta_key = '_oa_loudvoice_synchronized' AND cm.meta_value=%s";
 		$commentid = $wpdb->get_var ($wpdb->prepare ($sql, $token));
-	
+		
 		// Make sure we have a result
-		if ( ! empty ($commentid) && is_numeric ($commentid))
+		if (!empty ($commentid) && is_numeric ($commentid))
 		{
 			return $commentid;
 		}
@@ -26,7 +180,6 @@ function oa_loudvoice_get_commentid_for_token ($token)
 	
 	// Error
 	return false;
-
 }
 
 /**
@@ -49,7 +202,6 @@ function oa_loudvoice_get_wordpress_approved_status ($moderation_status, $spam_s
 	
 	return 1;
 }
-
 
 /**
  * Returns the LoudVoice status for a given WordPress status
@@ -77,12 +229,12 @@ function oa_loudvoice_get_status_for_comment ($comment, $target)
 				return 'approved';
 			
 			case '0' :
-			case 'spam':
+			case 'spam' :
 				return 'unapproved';
 			
 			case 'trash' :
 				return 'deleted';
-
+			
 			default :
 				return 'unmoderated';
 		}
@@ -263,6 +415,46 @@ function oa_loudvoice_is_https_on ()
 	}
 	
 	return false;
+}
+
+/**
+ * Returns the user's ip address
+ */
+function oa_loudvoice_get_user_ip ()
+{
+	if (isset ($_SERVER) && is_array ($_SERVER))
+	{
+		if (!empty ($_SERVER ['REMOTE_ADDR']))
+		{
+			$REMOTE_ADDR = $_SERVER ['REMOTE_ADDR'];
+		}
+		
+		if (!empty ($_SERVER ['X_FORWARDED_FOR']))
+		{
+			$X_FORWARDED_FOR = explode (',', $_SERVER ['X_FORWARDED_FOR']);
+			
+			if (is_array ($X_FORWARDED_FOR) and count ($X_FORWARDED_FOR) > 0)
+			{
+				$REMOTE_ADDR = trim ($X_FORWARDED_FOR [0]);
+			}
+		}
+		elseif (!empty ($_SERVER ['HTTP_X_FORWARDED_FOR']))
+		{
+			$HTTP_X_FORWARDED_FOR = explode (',', $_SERVER ['HTTP_X_FORWARDED_FOR']);
+			
+			if (!empty ($HTTP_X_FORWARDED_FOR))
+			{
+				$REMOTE_ADDR = trim ($HTTP_X_FORWARDED_FOR [0]);
+			}
+		}
+		if (!empty ($REMOTE_ADDR))
+		{
+			return preg_replace ('/[^0-9a-f:\., ]/si', '', $REMOTE_ADDR);
+		}
+	}
+	
+	// Error
+	return null;
 }
 
 /**

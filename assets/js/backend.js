@@ -1,43 +1,46 @@
 jQuery(document).ready(function($) {
 
-	/* Synchronize */
-	$('#oa_loudvoice_synchronize').click(function(){
-		var message_string, message_container, is_success, data;
+	/* Export */
+	$('.oa_loudvoice_sync').click(function(){
+		var message_string, message_container, is_success, data, action;
 		
+		action = ($(this).attr('id') == 'oa_loudvoice_import' ? 'import' : 'export'); 
+
 		/* Only click once */
 		if ( ! $(this).hasClass ('disabled'))
 		{
 			$(this).addClass ('disabled');
 		
-			message_container = jQuery('#oa_loudvoice_synchronize_result');	
+			message_container = jQuery('#oa_loudvoice_' + action + '_result');	
 			message_container.removeClass('success_message error_message').addClass('working_message');
 			message_container.html(objectL10n.oa_admin_js_2);
 			
 			data = {
-					_ajax_nonce: objectL10n.oa_loudvoice_ajax_nonce,
-					action: 'full_synchronize'
+				_ajax_nonce: objectL10n.oa_loudvoice_ajax_nonce,
+				action: ('oa_loudvoice_' + action)
 			};
 				
-			jQuery.post(ajaxurl,data, function(response) {	
-							
-				alert (response);
-	
-				if (response == 'success_autodetect_api_curl_https')
-				{
-					is_success = true;
-					radio_curl.attr("checked", "checked");			
-					radio_use_http_1.attr("checked", "checked");					
-					message_string = objectL10n.oa_admin_js_201a;
-				}		
+			jQuery.post(ajaxurl,data, function(response) {
 			
+				alert(response_string);
+				
+				var response_parts = response_string.split('|');
+				var response_status = response_parts[0];
+				var response_flag = response_parts[1];
+				var response_text = response_parts[2];
+				
 				message_container.removeClass('working_message');
-				message_container.html(message_string);
-			
-				if (is_success){
-					message_container.addClass('success_message');
-				} else {
+				message_container.html(response_text);
+	
+				if (response_status == 'error')
+				{
 					message_container.addClass('error_message');
-				}						
+				}	
+				else
+				{
+					message_container.addClass('success_message');
+				}			
+						
 			});
 			
 			$(this).removeClass ('disabled');

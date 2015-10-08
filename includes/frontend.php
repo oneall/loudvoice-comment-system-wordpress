@@ -7,11 +7,12 @@ function oa_loudvoice_pre_comment_on_post ($comment_post_ID)
 {
 	if (oa_louddvoice_is_setup ())
 	{
-		wp_die (__ ('The built-in commenting system may not be used while Loudvoice is active.'));
+		wp_die (__ ('To prevent spam the built-in commenting system may not be used while Loudvoice is active.'));
 	}
 	return $comment_post_ID;
 }
 add_action ('pre_comment_on_post', 'oa_loudvoice_pre_comment_on_post');
+
 
 /**
  * Replace the comments form
@@ -44,7 +45,7 @@ function oa_loudvoice_get_comments_template ($value)
 		// Create Placeholders
 		wp_localize_script ('oa_loudvoice_frontend_js', 'oa_loudvoice', array(
 			'nonce' => $ajax_nonce,
-			'ajaxurl' =>  admin_url ('admin-ajax.php')
+			'ajaxurl' => admin_url ('admin-ajax.php') 
 		));
 		
 		// Display Loudvoice
