@@ -95,9 +95,9 @@ function oa_loudvoice_create_author_session ($userid, $ip_address = null)
 }
 
 /**
- * Cleanup of the meta
+ * Cleanup of the post/comments meta
  */
-function oa_loudvoice_cleanup_meta ($all = false)
+function oa_loudvoice_cleanup_post_comment_meta ($all = false)
 {
 	// Global Vars
 	global $wpdb;
