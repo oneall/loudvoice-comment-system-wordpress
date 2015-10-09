@@ -433,7 +433,10 @@ function oa_loudvoice_display_synchronize ()
 										<a class="button-secondary oa_loudvoice_sync" id="oa_loudvoice_export" href="#" ><strong><?php _e ('Export Comments', 'oa_loudvoice'); ?></strong></a>
 									</p>							
 								</div>
-								<div class="oa_loudvoice_box_footer"><div id="oa_loudvoice_export_result"></div></div>
+								<div class="oa_loudvoice_box_footer">
+									<div id="oa_loudvoice_export_result"></div>
+									<textarea id="oa_loudvoice_export_verbose"></textarea>
+								</div>
 							</div>
 							
 							<div class="oa_loudvoice_box" id="oa_loudvoice_box_import">
@@ -548,7 +551,7 @@ function oa_loudvoice_display_settings ()
 							</td>
 							<td>
 								<input type="radio" id="oa_loudvoice_api_connection_handler_curl" name="oa_loudvoice_settings[api_connection_handler]" value="curl" <?php echo (($api_connection_handler <> 'fsockopen') ? 'checked="checked"' : ''); ?> />
-								<label for="oa_loudvoice_api_connection_handler_curl"><?php _e ('Use PHP CURL to communicate with the API', 'oa_loudvoice'); ?> <strong>(<?php _e ('Default', 'oa_loudvoice') ?>)</strong></label><br />
+								<label for="oa_loudvoice_api_connection_handler_curl"><?php _e ('Use PHP CURL to communicate with the API', 'oa_loudvoice'); ?> <strong>(<?php _e ('Recommended', 'oa_loudvoice') ?>)</strong></label><br />
 								<span class="description"><?php _e ('Using CURL is recommended but it might be disabled on some servers.', 'oa_loudvoice'); ?></span>
 							</td>
 						</tr>
@@ -568,7 +571,7 @@ function oa_loudvoice_display_settings ()
 							</td>
 							<td>
 								<input type="radio" id="oa_loudvoice_api_connection_handler_use_https_1" name="oa_loudvoice_settings[api_connection_use_https]" value="1" <?php echo ($api_connection_use_https ? 'checked="checked"' : ''); ?> />
-								<label for="oa_loudvoice_api_connection_handler_use_https_1"><?php _e ('Communication via HTTPS on port 443', 'oa_loudvoice'); ?> <strong>(<?php _e ('Default', 'oa_loudvoice') ?>)</strong></label><br />
+								<label for="oa_loudvoice_api_connection_handler_use_https_1"><?php _e ('Communication via HTTPS on port 443', 'oa_loudvoice'); ?> <strong>(<?php _e ('Recommended', 'oa_loudvoice') ?>)</strong></label><br />
 								<span class="description"><?php _e ('Using port 443 is secure but you might need OpenSSL', 'oa_loudvoice'); ?></span>
 							</td>
 						</tr>
@@ -649,7 +652,7 @@ function oa_loudvoice_display_settings ()
 							</td>
 							<td>
 								<input type="radio"	id="oa_loudvoice_disable_seo_comments_0" name="oa_loudvoice_settings[disable_seo_comments]" value="0" <?php echo ($disable_seo_comments == 0 ? 'checked="checked"' : ''); ?> />
-								<label for="oa_loudvoice_disable_seo_comments_0"><?php _e ('Enable search engine friendly comments', 'oa_loudvoice'); ?> <strong>(<?php _e ('Default', 'oa_loudvoice') ?>)</strong></label><br />
+								<label for="oa_loudvoice_disable_seo_comments_0"><?php _e ('Enable search engine friendly comments', 'oa_loudvoice'); ?> <strong>(<?php _e ('Recommended', 'oa_loudvoice') ?>)</strong></label><br />
 								<span class="description"><?php _e ('Displays an optimized version of the comments to search engines and browsers without JavaScript.', 'oa_loudvoice'); ?></span>
 							</td>
 						</tr>
@@ -672,7 +675,7 @@ function oa_loudvoice_display_settings ()
 							</td>
 							<td>
 								<input type="radio"	id="oa_loudvoice_disable_auto_comment_import_0" name="oa_loudvoice_settings[disable_auto_comment_import]" value="0" <?php echo ($disable_auto_comment_import == 0 ? 'checked="checked"' : ''); ?> />
-								<label for="oa_loudvoice_disable_auto_comment_import_0"><?php _e ('Yes, automatically import new comments', 'oa_loudvoice'); ?> <strong>(<?php _e ('Default', 'oa_loudvoice') ?>)</strong></label><br />
+								<label for="oa_loudvoice_disable_auto_comment_import_0"><?php _e ('Yes, automatically import new comments', 'oa_loudvoice'); ?> <strong>(<?php _e ('Recommended', 'oa_loudvoice') ?>)</strong></label><br />
 								<span class="description"><?php _e ('Automatically stores new comments that are made in Loudvoice also in your WordPress database.', 'oa_loudvoice'); ?></span>
 							</td>
 						</tr>
@@ -695,7 +698,7 @@ function oa_loudvoice_display_settings ()
 							</td>
 							<td>
 								<input type="radio"	id="oa_loudvoice_disable_author_sessions_0" name="oa_loudvoice_settings[disable_author_sessions]" value="0" <?php echo ($disable_author_sessions == 0 ? 'checked="checked"' : ''); ?> />
-								<label for="oa_loudvoice_disable_author_sessions_0"><?php _e ('Yes, connect WordPress users accounts to Loudvoice', 'oa_loudvoice'); ?> <strong>(<?php _e ('Default', 'oa_loudvoice') ?>)</strong></label><br />
+								<label for="oa_loudvoice_disable_author_sessions_0"><?php _e ('Yes, connect WordPress users accounts to Loudvoice', 'oa_loudvoice'); ?> <strong>(<?php _e ('Recommended', 'oa_loudvoice') ?>)</strong></label><br />
 								<span class="description"><?php _e ('Existing users of your blog will use their WordPress accounts to post comments with Loudvoice.', 'oa_loudvoice'); ?></span>
 							</td>
 						</tr>

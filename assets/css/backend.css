@@ -107,7 +107,13 @@ margin: 0 10px;
 	background-color : #ddd;
 	padding: 10px;
 }
-
+.oa_loudvoice_box_footer textarea {
+	border: 1px solid #ccc;
+	margin-top: 10px;
+	width:100%;
+	min-height:200px;
+	display:none;
+}
 
 /* ********************* Tables */
 .oa_loudvoice_table {

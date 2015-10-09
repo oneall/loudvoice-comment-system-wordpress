@@ -9,9 +9,15 @@ jQuery(document).ready(function($) {
 		/* Only click once */
 		if ( ! $(this).hasClass ('disabled'))
 		{
+			/* Disable Button */
 			$(this).addClass ('disabled');
 		
+			/* Get Elements */
 			message_container = jQuery('#oa_loudvoice_' + action + '_result');	
+			verbose_container = jQuery('#oa_loudvoice_' + action + '_verbose');	
+			
+			/* Reset Display */
+			verbose_container.hide();
 			message_container.removeClass('success_message error_message').addClass('working_message');
 			message_container.html(objectL10n.oa_admin_js_2);
 			
@@ -21,18 +27,24 @@ jQuery(document).ready(function($) {
 			};
 				
 			jQuery.post(ajaxurl,data, function(response) {
-			
-				alert(response_string);
+				var parts, status, flag, text, vebose;		
 				
-				var response_parts = response_string.split('|');
-				var response_status = response_parts[0];
-				var response_flag = response_parts[1];
-				var response_text = response_parts[2];
+				parts = response.split('|');
+				status = parts[0];
+				flag = parts[1];
+				text = parts[2];
+				verbose_text = parts[3];
+				
+				if (verbose_text.length > 0)
+				{
+					verbose_container.val (verbose_text);
+					verbose_container.show();
+				}
 				
 				message_container.removeClass('working_message');
-				message_container.html(response_text);
+				message_container.html(text);
 	
-				if (response_status == 'error')
+				if (status == 'error')
 				{
 					message_container.addClass('error_message');
 				}	

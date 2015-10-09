@@ -27,7 +27,9 @@ function get_wordpress_root_dir ()
 }
 
 // Required constants
-define ('BASE_PATH', get_wordpress_root_dir () . "/");
+// define ('BASE_PATH', get_wordpress_root_dir () . "/");
+
+define ('BASE_PATH', '/work/tests/wordpress003_loc/');
 define ('WP_USE_THEMES', false);
 
 // Required files
@@ -39,4 +41,4 @@ require_once (dirname (__FILE__) . '/../settings.php');
 require_once (dirname (__FILE__) . '/../toolbox.php');
 
 // Commande Line
-$cli = true;
+$verbose = true;

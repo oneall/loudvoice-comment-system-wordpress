@@ -13,7 +13,7 @@ function oa_loudvoice_remove_author_session ()
 		delete_user_meta ($user->data->ID, '_oa_loudvoice_author_session_expiration');
 	}
 }
-add_action ('clear_auth_cookie', ' oa_loudvoice_remove_author_session');
+add_action ('clear_auth_cookie', 'oa_loudvoice_remove_author_session');
 
 /**
  * Creates an author_session for the given user
@@ -126,6 +126,33 @@ function oa_loudvoice_cleanup_post_comment_meta ($all = false)
 	}
 }
 
+
+/**
+ * Returns the token for a given postid
+ */
+function oa_loudvoice_get_token_for_postid ($postid)
+{
+	global $wpdb;
+
+	// The postid is mandatory.
+	$postid = intval ($postid);
+	if (strlen ($postid) > 0)
+	{
+		// Read post_id for this token.
+		$sql = "SELECT pm.meta_value FROM " . $wpdb->postmeta . " AS pm INNER JOIN " . $wpdb->posts . " AS p ON (pm.post_id=p.ID) WHERE pm.post_id=%d AND pm.meta_key = '_oa_loudvoice_synchronized'";
+		$token = $wpdb->get_var ($wpdb->prepare ($sql, $postid));
+
+		// Make sure we have a result
+		if (!empty ($token))
+		{
+			return $token;
+		}
+	}
+
+	// Error
+	return false;
+}
+
 /**
  * Returns the postid for a given token
  */
@@ -133,10 +160,8 @@ function oa_loudvoice_get_postid_for_token ($token)
 {
 	global $wpdb;
 	
-	// Sanitize token.
+	// The token is mandatory.
 	$token = trim (strval ($token));
-	
-	// The token is required.
 	if (strlen ($token) > 0)
 	{
 		// Read post_id for this token.
@@ -155,6 +180,32 @@ function oa_loudvoice_get_postid_for_token ($token)
 }
 
 /**
+ * Returns the token for a given commentid
+ */
+function oa_loudvoice_get_token_for_commentid ($commentid)
+{
+	global $wpdb;
+
+	// The commentid is mandatory.
+	$commentid = intval ($commentid);
+	if (strlen ($commentid) > 0)
+	{
+		// Read user for this token.
+		$sql = "SELECT cm.meta_value FROM " . $wpdb->commentmeta . " AS cm INNER JOIN " . $wpdb->comments . " AS c ON (cm.comment_id=c.comment_ID) WHERE cm.comment_id=%d AND cm.meta_key = '_oa_loudvoice_synchronized'";
+		$token = $wpdb->get_var ($wpdb->prepare ($sql, $commentid));
+
+		// Make sure we have a result
+		if (!empty ($token))
+		{
+			return $token;
+		}
+	}
+
+	// Error
+	return false;
+}
+
+/**
  * Returns the commentid for a given token
  */
 function oa_loudvoice_get_commentid_for_token ($token)
@@ -163,8 +214,6 @@ function oa_loudvoice_get_commentid_for_token ($token)
 	
 	// Sanitize token.
 	$token = trim (strval ($token));
-	
-	// The token is required.
 	if (strlen ($token) > 0)
 	{
 		// Read user for this token.
