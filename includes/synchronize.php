@@ -59,20 +59,20 @@ function oa_loudvoice_do_import_comments_for_discussion_token ($verbose, $discus
 					// Import
 					if (! empty ($lv_comments->entries))
 					{
-						foreach ($lv_comments->entries as $lv_data)
+						foreach ($lv_comments->entries as $lv_comment)
 						{
 							// Debug
-							oa_loudvoice_debug ($verbose, '  Importing comment_token: ' . $lv_data->comment_token);
+							oa_loudvoice_debug ($verbose, '  Importing comment_token: ' . $lv_comment->comment_token);
 							
 							// Comment found in database
-							if (($commentid = oa_loudvoice_get_commentid_for_token ($lv_data->comment_token)) !== false)
+							if (($commentid = oa_loudvoice_get_commentid_for_token ($lv_comment->comment_token)) !== false)
 							{
 								
 								// Full Comment Data
 								if (($wp_data = get_comment ($commentid, 'ARRAY_A')) !== null)
 								{
 									// Update Fields
-									$wp_data ['comment_approved'] = oa_loudvoice_get_wordpress_approved_status ($lv_data->moderation_status, $lv_data->spam_status);
+									$wp_data ['comment_approved'] = oa_loudvoice_get_wordpress_approved_status ($lv_comment->moderation_status, $lv_comment->spam_status);
 									
 									// Filter
 									$wp_data = wp_filter_comment ($wp_data);
@@ -81,7 +81,7 @@ function oa_loudvoice_do_import_comments_for_discussion_token ($verbose, $discus
 									wp_update_comment ($wp_data);
 									
 									// Updated
-									$result ['updated'] [$commentid] = $lv_data->comment_token;
+									$result ['updated'] [$commentid] = $lv_comment->comment_token;
 									
 									// Debug
 									oa_loudvoice_debug ($verbose, '   UPDATED WordPress Comment #' . $commentid);
@@ -91,22 +91,22 @@ function oa_loudvoice_do_import_comments_for_discussion_token ($verbose, $discus
 							else
 							{
 								// Debug
-								oa_loudvoice_debug ($verbose, '   No WordPress Comment Found ' . $lv_data->comment_token);
+								oa_loudvoice_debug ($verbose, '   No WordPress Comment Found ' . $lv_comment->comment_token);
 								oa_loudvoice_debug ($verbose, '   Adding Comment To Post #' . $postid);
 								
 								// Prepare WordPress Comment
 								$wp_data = array(
 									'comment_post_ID' => $postid,
-									'comment_author' => $lv_data->author->name,
-									'comment_author_email' => $lv_data->author->email,
-									'comment_author_url' => '',
-									'comment_content' => $lv_data->text,
-									'comment_parent' => 0,
+									'comment_author' => ( ! empty ($lv_comment->author->name) ? $lv_comment->author->name : ''), 
+									'comment_author_email' => ( ! empty ($lv_comment->author->email) ? $lv_comment->author->email : ''),
+									'comment_author_url' => (! empty ($lv_comment->author->website_url) ? $lv_comment->author->website_url : ''),
+									'comment_content' => $lv_comment->text,
+									'comment_parent' => ( ! empty ($lv_comment->parent_comment_token) ? oa_loudvoice_get_commentid_for_token ($lv_comment->parent_comment_token) : 0),
 									'user_id' => 0,
-									'comment_author_IP' => $lv_data->ip_address,
+									'comment_author_IP' => $lv_comment->ip_address,
 									'comment_agent' => 'Loudvoice/1.0 WordPress',
-									'comment_date_gmt' => date ("Y-m-d G:i:s", strtotime ($lv_data->date_creation)),
-									'comment_approved' => oa_loudvoice_get_wordpress_approved_status ($lv_data->moderation_status, $lv_data->spam_status) 
+									'comment_date_gmt' => date ('Y-m-d G:i:s', strtotime ($lv_comment->date_creation)),
+									'comment_approved' => oa_loudvoice_get_wordpress_approved_status ($lv_comment->moderation_status, $lv_comment->spam_status) 
 								);
 								
 								// Filter
@@ -116,15 +116,15 @@ function oa_loudvoice_do_import_comments_for_discussion_token ($verbose, $discus
 								$commentid = wp_insert_comment ($wp_data);
 								
 								// Updated
-								$result ['created'] [$commentid] = $lv_data->comment_token;
+								$result ['created'] [$commentid] = $lv_comment->comment_token;
 								
 								// Update Meta
-								add_post_meta ($postid, '_oa_loudvoice_synchronized_comments', $lv_data->comment_token, false);
+								add_post_meta ($postid, '_oa_loudvoice_synchronized_comments', $lv_comment->comment_token, false);
 								update_post_meta ($postid, '_oa_loudvoice_synchronized', $discussion_token);
 								
 								// Save Comment Meta
 								update_comment_meta ($commentid, '_oa_loudvoice_synchronized_discussion', $discussion_token);
-								update_comment_meta ($commentid, '_oa_loudvoice_synchronized', $lv_data->comment_token);
+								update_comment_meta ($commentid, '_oa_loudvoice_synchronized', $lv_comment->comment_token);
 								
 								// Debug
 								oa_loudvoice_debug ($verbose, '  CREATED WordPress Comment #' . $commentid);
@@ -565,7 +565,7 @@ function oa_loudvoice_import_comment_ajax ()
 				{
 					// Decode result
 					$json = @json_decode ($api_result->http_data);
-				
+
 					// Make sure it's valid
 					if (is_object ($json) and isset ($json->response->result->data->comment))
 					{
@@ -586,11 +586,11 @@ function oa_loudvoice_import_comment_ajax ()
 									'comment_author_email' => $lv_comment->author->email,
 									'comment_author_url' => '',
 									'comment_content' => $lv_comment->text,
-									'comment_parent' => 0,
+									'comment_parent' => ( ! empty ($lv_comment->parent_comment_token) ? oa_loudvoice_get_commentid_for_token ($lv_comment->parent_comment_token) : 0),
 									'user_id' => 0,
 									'comment_author_IP' => $lv_comment->ip_address,
 									'comment_agent' => 'Loudvoice/1.0 WordPress',
-									'comment_date_gmt' => date ("Y-m-d G:i:s", strtotime ($lv_comment->date_creation)),
+									'comment_date_gmt' => date ('Y-m-d G:i:s', strtotime ($lv_comment->date_creation)),
 									'comment_approved' => oa_loudvoice_get_wordpress_approved_status ($lv_comment->moderation_status, $lv_comment->spam_status) 
 								);
 								
