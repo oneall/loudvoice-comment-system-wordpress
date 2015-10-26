@@ -42,7 +42,7 @@ function oa_loudvoice_do_import_comments_for_discussion_token ($verbose, $discus
 			oa_loudvoice_debug ($verbose, ' Reading Comments, Page: ' . $page);
 			
 			// Make Request
-			$api_result = oa_loudvoice_do_api_request_endpoint ('/discussions/' . $discussion_token . '/comments.json?page=' . $page . '&entries_per_page=' . $entries_per_page);
+			$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/discussions/' . $discussion_token . '/comments.json?page=' . $page . '&entries_per_page=' . $entries_per_page);
 			
 			// Check result
 			if (is_object ($api_result) and property_exists ($api_result, 'http_code') and $api_result->http_code == 200)
@@ -176,7 +176,7 @@ function oa_loudvoice_do_import ($verbose, $page = 1, $entries_per_page = 50)
 		oa_loudvoice_debug ($verbose, 'Importing Discussions, Page: ' . $page . ' / Entries Per Page: ' . $entries_per_page);
 		
 		// Make Request
-		$api_result = oa_loudvoice_do_api_request_endpoint ('/discussions.json?page=' . $page . '&entries_per_page=' . $entries_per_page);
+		$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/discussions.json?page=' . $page . '&entries_per_page=' . $entries_per_page);
 		
 		// Check result
 		if (is_object ($api_result) and property_exists ($api_result, 'http_code') and $api_result->http_code == 200)
@@ -381,7 +381,7 @@ function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
 			);
 			
 			// Push post to Loudvoice
-			$api_result = oa_loudvoice_do_api_request_endpoint ('/discussions.json', $lv_data);
+			$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/discussions.json', $lv_data);
 			
 			// Check result (201: created, 200: already exists)
 			if (is_object ($api_result) && property_exists ($api_result, 'http_code') && ($api_result->http_code == 200 || $api_result->http_code == 201))
@@ -430,7 +430,7 @@ function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
 							if (!empty ($comment_token))
 							{
 								// Read Comment
-								$api_result = oa_loudvoice_do_api_request_endpoint ('/discussions/comments/' . $comment_token . '.json');
+								$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/comments/' . $comment_token . '.json');
 								if (is_object ($api_result) && property_exists ($api_result, 'http_code'))
 								{
 									// Comment Does not exist
@@ -480,7 +480,7 @@ function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
 							);
 							
 							// Push post to Loudvoice
-							$api_result = oa_loudvoice_do_api_request_endpoint ('/discussions/comments.json', $lv_data);
+							$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/comments.json', $lv_data);
 							
 							// Check result (201: created, 200: already exists)
 							if (is_object ($api_result) && property_exists ($api_result, 'http_code'))
@@ -556,8 +556,8 @@ function oa_loudvoice_import_comment_ajax ()
 		if (!empty ($postid) && !empty ($comment_token))
 		{
 			// Pull Comment
-			$api_result = oa_loudvoice_do_api_request_endpoint ('/discussions/comments/' . $comment_token . '.json');
-			
+			$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/comments/' . $comment_token . '.json');
+
 			// Check result
 			if (is_object ($api_result) and property_exists ($api_result, 'http_code'))
 			{				

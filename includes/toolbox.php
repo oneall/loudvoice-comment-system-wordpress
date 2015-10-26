@@ -68,7 +68,7 @@ function oa_loudvoice_create_author_session ($userid, $ip_address = null)
 				);
 				
 				// Make Request
-				$result = oa_loudvoice_do_api_request_endpoint ('/discussions/authors/sessions.json', $data);
+				$result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/authors/sessions.json', $data);
 				
 				// Check result
 				if (is_object ($result) and property_exists ($result, 'http_code') and ($result->http_code == 200 or $result->http_code == 201))
