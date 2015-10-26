@@ -55,6 +55,7 @@ function oa_loudvoice_create_author_session ($userid, $ip_address = null)
 							'author_session' => array(
 								'author' => array(
 									'author_reference' => oa_loudvoice_get_author_reference_for_user ($user),
+									'allow_create_author_reference' => true,
 									'name' => $user->user_login,
 									'email' => $user->user_email,
 									'website_url' => $user->user_url,
