@@ -5,47 +5,46 @@
  */
 function oa_loudvoice_remove_author_session ()
 {
-	// Read User
-	$user = wp_get_current_user ();
-	if (!empty ($user->data->ID))
+	// Is Loudvoice running?
+	if (oa_louddvoice_is_setup ())
 	{
-		delete_user_meta ($user->data->ID, '_oa_loudvoice_author_session_token');
-		delete_user_meta ($user->data->ID, '_oa_loudvoice_author_session_expiration');
+		// Read settings
+		$settings = get_option ('oa_loudvoice_settings');
+	
+		// Read User
+		$user = wp_get_current_user ();
+		
+		// Are author sessions enabled and do we have a valid user?
+		if (empty ($settings ['disable_author_sessions']) && is_object ($user) && !empty ($user->ID))
+		{
+			delete_user_meta ($user->ID, '_oa_loudvoice_author_session_token');
+			delete_user_meta ($user->ID, '_oa_loudvoice_author_session_expiration');
+		}
 	}
 }
 add_action ('clear_auth_cookie', 'oa_loudvoice_remove_author_session');
 
+
 /**
- * Creates an author_session for the given user
+ * Creates an author_session when the user logs in
  */
-function oa_loudvoice_create_author_session ($userid, $ip_address = null)
+function oa_loudvoice_create_author_session ($user_login, $user)
 {
 	// Is Loudvoice running?
 	if (oa_louddvoice_is_setup ())
 	{
-		// Read the current user
-		$user = get_userdata ($userid);
-		if (!empty ($user->ID))
-		{
-			// Compte IP Address
-			if (empty ($ip_address))
-			{
-				$ip_address = oa_loudvoice_get_user_ip ();
-			}
-			// Start a new session?
-			$start_new_session = true;
-			
+		// Read settings
+		$settings = get_option ('oa_loudvoice_settings');
+		
+		// Are author sessions enabled and do we have a valid user?
+		if (empty ($settings ['disable_author_sessions']) && is_object ($user) && !empty ($user->ID))
+		{	
 			// Read Session Details
-			$tmp_author_session_token = get_user_meta ($user->ID, '_oa_loudvoice_author_session_token', true);
-			$tmp_author_session_expiration = get_user_meta ($user->ID, '_oa_loudvoice_author_session_expiration', true);
+			$author_session_token = get_user_meta ($user->ID, '_oa_loudvoice_author_session_token', true);
+			$author_session_expiration = get_user_meta ($user->ID, '_oa_loudvoice_author_session_expiration', true);
 			
-			// Session Found
-			if (!empty ($tmp_author_session_token) && !empty ($tmp_author_session_expiration) && $tmp_author_session_expiration < time ())
-			{
-				$author_session_token = $tmp_author_session_token;
-			}
-			// Not found
-			else
+			// Session not found or expired
+			if (empty ($author_session_token) || empty ($author_session_expiration) || $author_session_expiration > time ())
 			{
 				// API Data
 				$data = array(
@@ -57,10 +56,10 @@ function oa_loudvoice_create_author_session ($userid, $ip_address = null)
 									'author_reference' => oa_loudvoice_get_author_reference_for_user ($user),
 									'allow_create_author_reference' => true,
 									'name' => $user->user_login,
-									'email' => $user->user_email,
-									'website_url' => $user->user_url,
+									'email' => ( ! empty ($user->user_email) ? $user->user_email : null),
+									'website_url' => ( ! empty ($user->user_url) ? $user->user_url : null),
 									'picture_url' => oa_loudvoice_get_avatar_url_for_userid ($user->ID),
-									'ip_address' => $ip_address 
+									'ip_address' => oa_loudvoice_get_user_ip ()
 								) 
 							) 
 						) 
@@ -83,17 +82,14 @@ function oa_loudvoice_create_author_session ($userid, $ip_address = null)
 					// Save Meta
 					update_user_meta ($user->ID, '_oa_loudvoice_author_session_token', $author_session_token);
 					update_user_meta ($user->ID, '_oa_loudvoice_author_session_expiration', $author_session_expiration);
-					
-					// Success
-					return $author_session_token;
 				}
 			}
 		}
 	}
-	
-	// Error
-	return null;
 }
+add_action('wp_login', 'oa_loudvoice_create_author_session', 99, 2);
+
+
 
 /**
  * Cleanup of the post/comments meta
@@ -421,7 +417,6 @@ function oa_loudvoice_get_link_for_post ($postid)
  */
 function oa_louddvoice_is_setup ()
 {
-	// return false;
 	// Read settings
 	$settings = get_option ('oa_loudvoice_settings');
 	

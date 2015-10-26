@@ -29,4 +29,5 @@ $oa_loudvoice_providers ['wordpress'] = 'WordPress.com';
 $oa_loudvoice_providers ['yahoo'] = 'Yahoo';
 $oa_loudvoice_providers ['youtube'] = 'YouTube';
 $oa_loudvoice_providers ['amazon'] = 'Amazon';
-
+$oa_loudvoice_providers ['pixelpin'] = 'PixelPin';
+$oa_loudvoice_providers ['pinterest'] = 'Pinterest';

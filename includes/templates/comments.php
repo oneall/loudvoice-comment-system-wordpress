@@ -73,9 +73,16 @@ if (empty ($settings ['disable_author_sessions']))
 		$user = wp_get_current_user ();
 		
 		// User Found
-		if (!empty ($user->data->ID))
-		{	
-			$author_session_token = oa_loudvoice_create_author_session ($user->data->ID);			
+		if (!empty ($user->ID))
+		{
+			// Read Session Details
+			$tmp_author_session_token = get_user_meta ($user->ID, '_oa_loudvoice_author_session_token', true);
+			
+			// We have a valid session
+			if ( ! empty ($tmp_author_session_token))
+			{			
+				$author_session_token = $tmp_author_session_token;
+			}			
 		}
 	}
 }

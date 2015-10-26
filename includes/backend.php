@@ -646,7 +646,7 @@ function oa_loudvoice_display_settings ()
 						?>
 						<tr class="row_even">
 							<td class="row_multi" rowspan="2" style="width: 250px">
-								<label>
+								<label for="oa_loudvoice_disable_seo_comments_0">
 									<?php _e ('Use SEO friendly comments?', 'oa_loudvoice'); ?>
 								</label>
 							</td>
@@ -669,7 +669,7 @@ function oa_loudvoice_display_settings ()
 						?>
 						<tr class="row_odd">
 							<td class="row_multi" rowspan="2" style="width: 250px">
-								<label>
+								<label for="oa_loudvoice_disable_auto_comment_import_0">
 									<?php _e ('Auto-Import New Comments?', 'oa_loudvoice'); ?>
 								</label>
 							</td>
@@ -692,20 +692,20 @@ function oa_loudvoice_display_settings ()
 						?>
 						<tr class="row_even">
 							<td class="row_multi" rowspan="2" style="width: 250px">
-								<label>
+								<label for="oa_loudvoice_disable_author_sessions_0">
 									<?php _e ('Connect WordPress users to the Loudvoice comments platform?', 'oa_loudvoice'); ?>
 								</label>
 							</td>
 							<td>
 								<input type="radio"	id="oa_loudvoice_disable_author_sessions_0" name="oa_loudvoice_settings[disable_author_sessions]" value="0" <?php echo ($disable_author_sessions == 0 ? 'checked="checked"' : ''); ?> />
 								<label for="oa_loudvoice_disable_author_sessions_0"><?php _e ('Yes, connect WordPress users accounts to Loudvoice', 'oa_loudvoice'); ?> <strong>(<?php _e ('Recommended', 'oa_loudvoice') ?>)</strong></label><br />
-								<span class="description"><?php _e ('Existing users of your blog will use their WordPress accounts to post comments with Loudvoice.', 'oa_loudvoice'); ?></span>
+								<span class="description"><?php _e ('Existing users of your blog can use their WordPress accounts to post comments with Loudvoice.', 'oa_loudvoice'); ?></span>
 							</td>
 						</tr>
 						<tr class="row_even">
 							<td class="row_multi"> 
-								<input type="radio"	id="disable_author_sessions_1" name="oa_loudvoice_settings[disable_author_sessions]" value="1" <?php echo ($disable_author_sessions <> 0 ? 'checked="checked"' : ''); ?> />
-								<label for="disable_author_sessions_1"><?php _e ('No, do not connect WordPress users to Loudvoice', 'oa_loudvoice'); ?></strong></label><br />
+								<input type="radio"	id="oa_loudvoice_disable_author_sessions_1" name="oa_loudvoice_settings[disable_author_sessions]" value="1" <?php echo ($disable_author_sessions <> 0 ? 'checked="checked"' : ''); ?> />
+								<label for="oa_loudvoice_disable_author_sessions_1"><?php _e ('No, do not connect WordPress users to Loudvoice', 'oa_loudvoice'); ?></strong></label><br />
 								<span class="description"><?php _e ('Existing users can only post as guests or with their social network accounts.', 'oa_loudvoice'); ?></span>						
 							</td>
 						</tr>
