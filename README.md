@@ -1,5 +1,5 @@
 ## Installation
 
 - Installer WordPress
-- Copier répertoire oa-loudvoice dans /wp-content/plugins
-- Activer plugin and l'interface admin de WordPress
+- Copier le répertoire *oa-loudvoice* dans le répertoire /wp-content/plugins
+- Activer le plugin dans l'interface admin de WordPress
