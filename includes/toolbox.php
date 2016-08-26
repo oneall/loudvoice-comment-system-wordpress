@@ -58,7 +58,7 @@ function oa_loudvoice_create_author_session ($user_login, $user)
 									'name' => $user->user_login,
 									'email' => ( ! empty ($user->user_email) ? $user->user_email : null),
 									'website_url' => ( ! empty ($user->user_url) ? $user->user_url : null),
-									'picture_url' => oa_loudvoice_get_avatar_url_for_userid ($user->ID),
+									'picture_url' => oa_loudvoice_get_avatar_url ($user->ID, $user->user_email),
 									'ip_address' => oa_loudvoice_get_user_ip ()
 								) 
 							) 
@@ -68,7 +68,7 @@ function oa_loudvoice_create_author_session ($user_login, $user)
 				
 				// Make Request
 				$result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/authors/sessions.json', $data);
-				
+	
 				// Check result
 				if (is_object ($result) and property_exists ($result, 'http_code') and ($result->http_code == 200 or $result->http_code == 201))
 				{
@@ -250,62 +250,67 @@ function oa_loudvoice_get_wordpress_approved_status ($moderation_status, $spam_s
 }
 
 /**
- * Returns the LoudVoice status for a given WordPress status
+ * Returns the LoudVoice spam status for a given WordPress status
  */
-function oa_loudvoice_get_status_for_comment ($comment, $target)
+function oa_loudvoice_get_spam_status_for_comment ($comment)
 {
 	// Spam Status
-	if (strtolower (trim ($target)) == 'spam')
+	switch ($comment->comment_approved)
 	{
-		switch ($comment->comment_approved)
-		{
-			case 'spam' :
-				return 'is_spam';
+		case 'spam' :
+			return 'spam';
 			
-			default :
-				return 'is_not_spam';
-		}
+		default :
+			return 'not-spam';
 	}
-	// Moderation Status
-	else
-	{
-		switch ($comment->comment_approved)
-		{
-			case '1' :
-				return 'approved';
-			
-			case '0' :
-			case 'spam' :
-				return 'unapproved';
-			
-			case 'trash' :
-				return 'deleted';
-			
-			default :
-				return 'unmoderated';
-		}
-	}
-	
-	// Error
-	return null;
 }
+
+/**
+ * Returns the LoudVoice moderation status for a given WordPress status
+ */
+function oa_loudvoice_get_moderation_status_for_comment ($comment) 
+{
+	switch ($comment->comment_approved)
+	{
+		case '1' :
+			return 'approved';
+	
+		case '0' :
+		case 'spam' :
+			return 'refused';
+		
+		case 'trash' :
+			return 'deleted';
+			
+		default :
+			return 'unreviewed';
+	}
+}
+	
+
 
 /**
  * Returns the avatar for a given userid
  */
-function oa_loudvoice_get_avatar_url_for_userid ($userid)
+function oa_loudvoice_get_avatar_url ($userid, $email)
 {
-	// Read Avatar
-	$avatar_html = get_avatar ($userid);
+	$avatar_url = null;
 	
-	// Extract src
-	if (preg_match ("/src\s*=\s*(['\"]{1})(.*?)\\1/i", $avatar_html, $matches))
+	// Read Avatar
+	if (! empty ($userid) || ! empty  ($email))
 	{
-		return trim ($matches [2]);
+		$avatar_from = (empty ($userid) ? $email : $userid);
+		$avatar_html = get_avatar ($avatar_from);
+	
+		// Extract src
+		if (preg_match ("/src\s*=\s*(['\"]{1})(.*?)\\1/i", $avatar_html, $matches))
+		{
+			$avatar_url = trim ($matches [2]);
+		}
 	}
 	
 	// Error
-	return null;
+	return $avatar_url;
 }
 
 /**

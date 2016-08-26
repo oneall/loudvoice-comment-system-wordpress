@@ -1,6 +1,11 @@
 <?php
 /*
- * Plugin Name: Loudvoice Comments Platform Plugin URI: http://www.oneall.com/ Description: Loudvoice replaces your WordPress comments by a <strong>powerful comments platform</strong> that includes logging in with 30+ social networks, spam filters and automatic backups. Version: 5.0 Author: OneAll <support@oneall.com> Author URI: http://www.oneall.com/
+ * Plugin Name: Loudvoice Comments Platform 
+ * URI: http://www.oneall.com/ 
+ * Description: Loudvoice replaces your WordPress comments by a <strong>powerful comments platform</strong> that includes logging in with 30+ social networks, spam filters and automatic backups. 
+ * Version: 1.0 
+ * Author: OneAll <support@oneall.com> 
+ * Author URI: http://www.oneall.com/
  */
 define ('OA_LOUDVOICE_PLUGIN_URL', plugins_url () . '/' . basename (dirname (__FILE__)));
 define ('OA_LOUDVOICE_BASE_PATH', dirname (plugin_basename (__FILE__)));

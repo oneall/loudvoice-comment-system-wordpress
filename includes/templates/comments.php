@@ -198,6 +198,7 @@ $page_url = oa_loudvoice_get_link_for_post ($post);
 			_oneall.push(['loudvoice', 'set_reference', '<?php echo $page_reference; ?>']);
 			_oneall.push(['loudvoice', 'set_author_session_token', '<?php echo strval ($author_session_token); ?>']);
 			_oneall.push(['loudvoice', 'set_event', 'on_comment_added', function(data) {oa_loudvoice_import_comment ('<?php echo $post->ID; ?>', data);}]);
+			
 			_oneall.push(['loudvoice', 'do_render_ui', '<?php echo $comments_container_id; ?>']);
 		</script>
 	</div>

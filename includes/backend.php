@@ -5,13 +5,13 @@
 // /////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Adds a warning to be displayed when Loudvoice needs to be setup
+ * Adds a warning to be displayed when LoudVoice needs to be setup
  */
 function oa_loudvoice_admin_message ()
 {
 	if (!oa_louddvoice_is_setup ())
 	{
-		echo '<div class="updated"><p><strong>' . __ ('Thank you for using the Loudvoice comments platform!', 'oa_loudvoice') . '</strong> ' . sprintf (__ ('Please <strong><a href="%s">complete the setup</a></strong> to enable the plugin.', 'oa_loudvoice'), 'admin.php?page=oa_loudvoice_settings') . '</p></div>';
+		echo '<div class="updated"><p><strong>' . __ ('Thank you for using the LoudVoice comments platform!', 'oa_loudvoice') . '</strong> ' . sprintf (__ ('Please <strong><a href="%s">complete the setup</a></strong> to enable the plugin.', 'oa_loudvoice'), 'admin.php?page=oa_loudvoice_settings') . '</p></div>';
 	}
 }
 
@@ -21,11 +21,11 @@ function oa_loudvoice_admin_message ()
 function oa_loudvoice_admin_menu ()
 {
 	// Setup
-	$page = add_menu_page ('OneAll Loudvoice Comments Platform ' . __ ('Setup', 'oa_loudvoice'), 'Loudvoice', 'manage_options', 'oa_loudvoice_settings', 'oa_loudvoice_display_settings');
+	$page = add_menu_page ('OneAll LoudVoice Comments Platform ' . __ ('Setup', 'oa_loudvoice'), 'LoudVoice', 'manage_options', 'oa_loudvoice_settings', 'oa_loudvoice_display_settings');
 	add_action ('admin_print_styles-' . $page, 'oa_loudvoice_admin_css');
 	
 	// Settings
-	$page = add_submenu_page ('oa_loudvoice_settings', 'OneAll Loudvoice Comments Platform ' . __ ('Synchronize', 'oa_loudvoice'), __ ('Synchronize', 'oa_loudvoice'), 'manage_options', 'oa_loudvoice_synchronize', 'oa_loudvoice_display_synchronize');
+	$page = add_submenu_page ('oa_loudvoice_settings', 'OneAll LoudVoice Comments Platform ' . __ ('Synchronize', 'oa_loudvoice'), __ ('Synchronize', 'oa_loudvoice'), 'manage_options', 'oa_loudvoice_synchronize', 'oa_loudvoice_display_synchronize');
 	add_action ('admin_print_styles-' . $page, 'oa_loudvoice_admin_css');
 	
 	// Fix Setup title
@@ -217,7 +217,7 @@ function oa_loudvoice_admin_check_api_settings ()
 	}
 	
 	// Domain
-	$api_domain = $api_subdomain . '.api.oneall.com';
+	$api_domain = $api_subdomain . '.api.oneall.loc';
 	
 	// Connection to
 	$api_resource_url = ($api_connection_use_https ? 'https' : 'http') . '://' . $api_domain . '/tools/ping.json';
@@ -399,7 +399,7 @@ function oa_loudvoice_display_synchronize ()
 	?>
 		<div class="wrap">
 			<div id="oa_loudvoice">
-				<h2>OneAll Loudvoice <?php echo (defined ('OA_LOUDVOICE_VERSION') ? OA_LOUDVOICE_VERSION : ''); ?></h2>
+				<h2>OneAll LoudVoice <?php echo (defined ('OA_LOUDVOICE_VERSION') ? OA_LOUDVOICE_VERSION : ''); ?></h2>
 				<h2 class="nav-tab-wrapper">
 					<a class="nav-tab" href="admin.php?page=oa_loudvoice_settings"><?php _e ('Setup', 'oa_loudvoice'); ?></a>
 					<a class="nav-tab nav-tab-active" href="admin.php?page=oa_loudvoice_synchronize"><?php _e ('Synchronize', 'oa_loudvoice'); ?></a>
@@ -423,11 +423,11 @@ function oa_loudvoice_display_synchronize ()
 						?>	
 							<div class="oa_loudvoice_box" id="oa_loudvoice_box_export">
 								<div class="oa_loudvoice_box_title">
-									<?php _e ('Export Comments from WordPress to Loudvoice', 'oa_loudvoice'); ?>
+									<?php _e ('Export Comments from WordPress to LoudVoice', 'oa_loudvoice'); ?>
 								</div>
 								<div class="oa_loudvoice_box_content">									
 									<p>
-										<?php _e ('You should export your comments immediately after having installed Loudvoice so that your users do not need to start their discussions from scratch. Please be patient as the export might take a couple of minutes.', 'oa_loudvoice'); ?>			
+										<?php _e ('You should export your comments immediately after having installed LoudVoice so that your users do not need to start their discussions from scratch. The export will in no case alter the comments that you already have in your WordPress database.', 'oa_loudvoice'); ?>			
 									</p>
 									<p>
 										<a class="button-secondary oa_loudvoice_sync" id="oa_loudvoice_export" href="#" ><strong><?php _e ('Export Comments', 'oa_loudvoice'); ?></strong></a>
@@ -441,11 +441,11 @@ function oa_loudvoice_display_synchronize ()
 							
 							<div class="oa_loudvoice_box" id="oa_loudvoice_box_import">
 								<div class="oa_loudvoice_box_title">
-									<?php _e ('Import Comments from Loudvoice to WordPress', 'oa_loudvoice'); ?>
+									<?php _e ('Import Comments from LoudVoice to WordPress', 'oa_loudvoice'); ?>
 								</div>
 								<div class="oa_loudvoice_box_content">								
 									<p>
-										<?php _e ('New comments made in Loudvoice are automatically stored in your WordPress database. If you plan to remove Loudvoice, then you can also launch the import manually to make sure that your comments are in sync.', 'oa_loudvoice'); ?>			
+										<?php _e ('New comments made in LoudVoice are automatically stored in your WordPress database. You can also launch the import manually to make sure that your comments are in sync. If there are comments which are in LoudVoice but not in your blog, then these comments will be added to your database.', 'oa_loudvoice'); ?>			
 									</p>			
 									<p>
 										<a class="button-secondary oa_loudvoice_sync" id="oa_loudvoice_import" href="#" ><strong><?php _e ('Import Comments', 'oa_loudvoice'); ?></strong></a>
@@ -472,7 +472,7 @@ function oa_loudvoice_display_settings ()
 	?>
 		<div class="wrap">
 			<div id="oa_loudvoice">
-				<h2>OneAll Loudvoice <?php echo (defined ('OA_LOUDVOICE_VERSION') ? OA_LOUDVOICE_VERSION : ''); ?></h2>
+				<h2>OneAll LoudVoice <?php echo (defined ('OA_LOUDVOICE_VERSION') ? OA_LOUDVOICE_VERSION : ''); ?></h2>
 				<h2 class="nav-tab-wrapper">
 					<a class="nav-tab nav-tab-active" href="admin.php?page=oa_loudvoice_settings"><?php _e ('Setup', 'oa_loudvoice'); ?></a>
 					<a class="nav-tab" href="admin.php?page=oa_loudvoice_synchronize"><?php _e ('Synchronize', 'oa_loudvoice'); ?></a>
@@ -483,7 +483,7 @@ function oa_loudvoice_display_settings ()
 						?>
 							<p>
 								<?php _e ('Our comments platform has been designed with ease of use in mind and allows your audience to have quick, focused and well thought out interactions surrounding your content. Let your users simply post as guests or connect with 25+ social networks like for example Twitter, Facebook, LinkedIn or Instagram.', 'oa_loudvoice'); ?>
-								<strong><?php _e ('Loudvoice gives your users the voice that they deserve!', 'oa_loudvoice'); ?> </strong>
+								<strong><?php _e ('LoudVoice gives your users the voice that they deserve!', 'oa_loudvoice'); ?> </strong>
 							</p>
 							<div class="oa_loudvoice_box" id="oa_loudvoice_box_status">
 								<div class="oa_loudvoice_box_title">
@@ -505,11 +505,11 @@ function oa_loudvoice_display_settings ()
 						?>						
 							<div class="oa_loudvoice_box" id="oa_loudvoice_box_status">
 								<div class="oa_loudvoice_box_title">
-									<?php _e ('Loudvoice is setup correctly', 'oa_loudvoice'); ?>
+									<?php _e ('LoudVoice is setup correctly', 'oa_loudvoice'); ?>
 								</div>
 								<div class="oa_loudvoice_box_content">				
 									<p>
-										<?php _e ('Login to your account to access the comments management system. Loudvoice automatically detects spam so you will not have much to do!', 'oa_loudvoice'); ?>
+										<?php _e ('Login to your account to access the comments management system. LoudVoice automatically detects spam so you will not have much to do!', 'oa_loudvoice'); ?>
 									</p>
 									<p>
 										<a class="button-secondary" href="https://app.oneall.com/signin/" target="_blank"><strong><?php _e ('Click here to login to your account', 'oa_loudvoice'); ?></strong></a>
@@ -676,14 +676,14 @@ function oa_loudvoice_display_settings ()
 							<td>
 								<input type="radio"	id="oa_loudvoice_disable_auto_comment_import_0" name="oa_loudvoice_settings[disable_auto_comment_import]" value="0" <?php echo ($disable_auto_comment_import == 0 ? 'checked="checked"' : ''); ?> />
 								<label for="oa_loudvoice_disable_auto_comment_import_0"><?php _e ('Yes, automatically import new comments', 'oa_loudvoice'); ?> <strong>(<?php _e ('Recommended', 'oa_loudvoice') ?>)</strong></label><br />
-								<span class="description"><?php _e ('Automatically stores new comments that are made in Loudvoice also in your WordPress database.', 'oa_loudvoice'); ?></span>
+								<span class="description"><?php _e ('Automatically stores new comments that are made in LoudVoice also in your WordPress database.', 'oa_loudvoice'); ?></span>
 							</td>
 						</tr>
 						<tr class="row_odd">
 							<td class="row_multi"> 
 								<input type="radio"	id="oa_loudvoice_disable_auto_comment_import_1" name="oa_loudvoice_settings[disable_auto_comment_import]" value="1" <?php echo ($disable_auto_comment_import <> 0 ? 'checked="checked"' : ''); ?> />
 								<label for="oa_loudvoice_disable_auto_comment_import_1"><?php _e ('No, I will import the comment on my own', 'oa_loudvoice'); ?></strong></label><br />
-								<span class="description"><?php _e ('You manually run Synchronize\Import to store Loudvoice comments in your database.', 'oa_loudvoice'); ?></span>						
+								<span class="description"><?php _e ('You manually run Synchronize\Import to store LoudVoice comments in your database.', 'oa_loudvoice'); ?></span>						
 							</td>
 						</tr>		
 						
@@ -693,19 +693,19 @@ function oa_loudvoice_display_settings ()
 						<tr class="row_even">
 							<td class="row_multi" rowspan="2" style="width: 250px">
 								<label for="oa_loudvoice_disable_author_sessions_0">
-									<?php _e ('Connect WordPress users to the Loudvoice comments platform?', 'oa_loudvoice'); ?>
+									<?php _e ('Connect WordPress users to the LoudVoice comments platform?', 'oa_loudvoice'); ?>
 								</label>
 							</td>
 							<td>
 								<input type="radio"	id="oa_loudvoice_disable_author_sessions_0" name="oa_loudvoice_settings[disable_author_sessions]" value="0" <?php echo ($disable_author_sessions == 0 ? 'checked="checked"' : ''); ?> />
-								<label for="oa_loudvoice_disable_author_sessions_0"><?php _e ('Yes, connect WordPress users accounts to Loudvoice', 'oa_loudvoice'); ?> <strong>(<?php _e ('Recommended', 'oa_loudvoice') ?>)</strong></label><br />
-								<span class="description"><?php _e ('Existing users of your blog can use their WordPress accounts to post comments with Loudvoice.', 'oa_loudvoice'); ?></span>
+								<label for="oa_loudvoice_disable_author_sessions_0"><?php _e ('Yes, connect WordPress users accounts to LoudVoice', 'oa_loudvoice'); ?> <strong>(<?php _e ('Recommended', 'oa_loudvoice') ?>)</strong></label><br />
+								<span class="description"><?php _e ('Existing users of your blog can use their WordPress accounts to post comments with LoudVoice.', 'oa_loudvoice'); ?></span>
 							</td>
 						</tr>
 						<tr class="row_even">
 							<td class="row_multi"> 
 								<input type="radio"	id="oa_loudvoice_disable_author_sessions_1" name="oa_loudvoice_settings[disable_author_sessions]" value="1" <?php echo ($disable_author_sessions <> 0 ? 'checked="checked"' : ''); ?> />
-								<label for="oa_loudvoice_disable_author_sessions_1"><?php _e ('No, do not connect WordPress users to Loudvoice', 'oa_loudvoice'); ?></strong></label><br />
+								<label for="oa_loudvoice_disable_author_sessions_1"><?php _e ('No, do not connect WordPress users to LoudVoice', 'oa_loudvoice'); ?></strong></label><br />
 								<span class="description"><?php _e ('Existing users can only post as guests or with their social network accounts.', 'oa_loudvoice'); ?></span>						
 							</td>
 						</tr>

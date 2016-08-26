@@ -29,8 +29,7 @@ function oa_loudvoice_do_import_comments_for_discussion_token ($verbose, $discus
 	
 	// Is Loudvoice running?
 	if (oa_louddvoice_is_setup ())
-	{
-		
+	{		
 		// Post found for this comment
 		if (($postid = oa_loudvoice_get_postid_for_token ($discussion_token)) !== false)
 		{
@@ -405,7 +404,7 @@ function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
 					update_post_meta ($postid, '_oa_loudvoice_synchronized', $discussion_token);
 					
 					// Now we synchronize the comments
-					$sql = "SELECT * FROM " . $wpdb->comments . " WHERE comment_post_ID='" . $postid . "' AND comment_type != 'trackback' AND comment_type != 'pingback' ORDER BY comment_ID ASC";
+					$sql = "SELECT * FROM " . $wpdb->comments . " WHERE comment_post_ID='" . $postid . "' AND comment_type != 'trackback' AND comment_type != 'pingback' ORDER BY comment_parent ASC";
 					$wp_comments = $wpdb->get_results ($sql);
 					
 					// Comments found?
@@ -422,6 +421,21 @@ function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
 							
 							// Read the token
 							$comment_token = oa_loudvoice_get_token_for_commentid ($commentid);
+							
+							// Read the parent token
+							if ( ! empty ($wp_comment->comment_parent))
+							{
+								$parent_comment_token = oa_loudvoice_get_token_for_commentid ($wp_comment->comment_parent);
+								
+								// Debug
+								oa_loudvoice_debug ($verbose, '    Parent Comment Token: '.$parent_comment_token);
+								
+							}
+							// No parent
+							else
+							{
+								$parent_comment_token = '';
+							}
 							
 							// Debug
 							oa_loudvoice_debug ($verbose, '   Exporting Comment WP#' . $commentid);
@@ -458,20 +472,20 @@ function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
 											'discussion_token' => $discussion_token 
 										),
 										'comment' => array(
-											// 'parent_comment_token' => $parent_comment_token,
+											'parent_comment_token' => $parent_comment_token,
 											'comment_token' => $comment_token,
 											'comment_reference' => oa_loudvoice_get_comment_reference_for_comment ($wp_comment),
 											'allow_create_comment_reference' => true,
 											'allow_create_duplicate_comments' => true,
-											'moderation_status' => oa_loudvoice_get_status_for_comment ($wp_comment, 'moderation'),
-											'spam_status' => oa_loudvoice_get_status_for_comment ($wp_comment, 'spam'),
+											'moderation_status' => oa_loudvoice_get_moderation_status_for_comment ($wp_comment),
+											'spam_status' => oa_loudvoice_get_spam_status_for_comment ($wp_comment),
 											'text' => $wp_comment->comment_content,
 											'author' => array(
 												'author_reference' => oa_loudvoice_get_author_reference_for_comment ($wp_comment),
 												'name' => $wp_comment->comment_author,
 												'email' => $wp_comment->comment_author_email,
 												'website_url' => $wp_comment->comment_author_url,
-												'picture_url' => oa_loudvoice_get_avatar_url_for_userid ($wp_comment->user_id),
+												'picture_url' => oa_loudvoice_get_avatar_url ($wp_comment->user_id, $wp_comment->comment_author_email),
 												'ip_address' => $wp_comment->comment_author_IP 
 											) 
 										) 
@@ -510,8 +524,9 @@ function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
 								}
 								else
 								{
+									
 									// Debug
-									oa_loudvoice_debug ($verbose, '    Comment Export Error, Code ' . $api_result->http_code);
+									oa_loudvoice_debug ($verbose, '    Comment Export Error, Code ' . print_r($api_result,true));
 								}
 							}
 							else
@@ -573,6 +588,7 @@ function oa_loudvoice_import_comment_ajax ()
 						$lv_discussion = $json->response->result->data->discussion;
 						$lv_comment = $json->response->result->data->comment;
 						
+					
 						// Validate the references before doing anything else
 						if ($lv_discussion->discussion_reference == oa_loudvoice_get_reference_for_post ($postid))
 						{
