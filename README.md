@@ -3,7 +3,7 @@ LoudVoice replaces the basic WordPress comments by a **powerful comment system**
  
 ### Plugin Installation
 
-* Upload the folder **loudvoice-comment-platform** to the **/wp-content/plugins/** directory of your WordPress site,
+* Upload the folder **loudvoice-comment-system** to the **/wp-content/plugins/** directory of your WordPress site,
 * Activate the plugin through the **Plugins** menu in WordPress administration area,
 * Navigate to the **LoudVoice** administration page to setup the plugin.
   
