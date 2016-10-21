@@ -1,14 +1,20 @@
+# LoudVoice
 LoudVoice replaces the basic WordPress comments by a **powerful comment system**> that includes logging in with 
 30+ social networks, spam filters and more.
  
-### Plugin Installation
+ 
+## Plugin Installation
 
 * Upload the folder **loudvoice-comment-system** to the **/wp-content/plugins/** directory of your WordPress site,
 * Activate the plugin through the **Plugins** menu in WordPress administration area,
 * Navigate to the **LoudVoice** administration page to setup the plugin.
   
-### Features
+ ## Official WordPress plugin
+https://wordpress.org/plugins/loudvoice-comment-system/
 
+
+
+## Features
 * Post as guest or login with 30+ social networks
 * Comments are indexable by search engines and optimized for SEO
 * Existing comments can be imported
@@ -18,8 +24,7 @@ LoudVoice replaces the basic WordPress comments by a **powerful comment system**
 * Single moderation interface for comments on multiple WordPress blogs
 
 
-### Social Login
-
+## Supported Social Networks
 * Amazon
 * Battle.net
 * Blogger
@@ -52,15 +57,13 @@ LoudVoice replaces the basic WordPress comments by a **powerful comment system**
 * YouTube
 
 
-###  Social Sharing
-
+##  Social Sharing
 * Facebook Like Button
 * Twitter Tweet Button
 
 
-### API Connection
+## About Us
+LoudVoice is maintained by [OneAll](http://www.oneall.com/). OneAll, a technology company offering a set of 
+web-delivered tools and services for establishing and optimizing a site's connection with social networks.
 
-The social network APIs are constantly changing and being updated. We monitor these changes and automatically update our APIs, 
-so that you can be sure that your social network integration will always run smoothly and with the most up-to-date API calls.
-
-In order to enable the plugin you must connect with the OneAll API and create a free account at https://app.oneall.com
+**Fork us on Github!**
