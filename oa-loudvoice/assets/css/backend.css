@@ -4,6 +4,7 @@
 	max-width: 100%;
 }
 
+
 /* ********************* Messages */
 #oa_loudvoice .error_message {
 	color: red;
@@ -36,9 +37,14 @@
 }
 
 /* ********************* Boxes */
+
 .oa_loudvoice_box {
 	border: 1px solid #CCCCCC;
 	margin: 25px 0;
+}
+
+.oa_loudvoice_box p {
+	padding: 0 10px;
 }
 
 .oa_loudvoice_box .oa_loudvoice_box_content {
@@ -68,7 +74,7 @@
 }
 
 #oa_loudvoice_box_help ul {
-	padding-left: 20px;
+	padding-left: 30px;
 	list-style-type: disc;
 }
 
@@ -109,6 +115,16 @@
 	width: 100%;
 	min-height: 200px;
 	display: none;
+}
+
+#oa_loudvoice_box_danger {
+    background-color: rgba(255, 173, 89, 0.25);
+    border-color: #f1ac65;
+	margin: 40px 0 20px;
+}
+
+#oa_loudvoice_box_danger .oa_loudvoice_box_title {
+    border-color: #f1ac65;
 }
 
 /* ********************* Tables */
@@ -159,6 +175,20 @@
 .oa_loudvoice_table tr.row_foot td {
 	background-color: #ddd;
 }
+
+
+.oa_loudvoice_table a.social-sharing{
+	background-image: url("../img/social_sharing.png");
+	background-repeat:no-repeat;
+    display: block;
+    height: 250px;
+    width:772px;
+}
+
+.oa_loudvoice_table td.col_unpadded{
+	padding:0;
+}
+
 
 /* ********************* Providers */
 .oa_loudvoice_table tr.row_provider td {

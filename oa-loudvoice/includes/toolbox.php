@@ -104,22 +104,23 @@ function oa_loudvoice_cleanup_post_comment_meta ($all = false)
 	{
 		// Comment Meta
 		$sql = "DELETE * FROM " . $wpdb->commentmeta . " WHERE meta_key LIKE %s";
-		$wpdb->query ($wpdb->prepare ($sql, '_oa_loudvoice_synchronized%'));
-		
+		$wpdb->query ($wpdb->prepare ($sql, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid().'%'));
+
 		// Post Meta
 		$sql = "DELETE * FROM " . $wpdb->postmeta . " WHERE meta_key LIKE %s";
-		$wpdb->query ($wpdb->prepare ($sql, '_oa_loudvoice_synchronized%'));
+		$wpdb->query ($wpdb->prepare ($sql, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid().'%'));
 	}
 	// Remove superfluous entries
 	else
 	{
+
 		// Comment Meta
 		$sql = "DELETE cm.* FROM " . $wpdb->commentmeta . " AS cm LEFT JOIN " . $wpdb->comments . " AS c ON (cm.comment_id = c.comment_ID) WHERE cm.meta_key LIKE %s AND c.comment_ID IS NULL";
-		$wpdb->query ($wpdb->prepare ($sql, '_oa_loudvoice_synchronized%'));
+		$wpdb->query ($wpdb->prepare ($sql, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid().'%'));
 		
 		// Post Meta
 		$sql = "DELETE pm.* FROM " . $wpdb->postmeta . " AS pm LEFT JOIN " . $wpdb->posts . " AS p ON (pm.post_id = p.ID) WHERE pm.meta_key LIKE %s AND p.ID IS NULL";
-		$wpdb->query ($wpdb->prepare ($sql, '_oa_loudvoice_synchronized%'));
+		$wpdb->query ($wpdb->prepare ($sql, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid().'%'));
 	}
 }
 
@@ -136,7 +137,7 @@ function oa_loudvoice_get_token_for_postid ($postid)
 	if (strlen ($postid) > 0)
 	{
 		// Read post_id for this token.
-		$sql = "SELECT pm.meta_value FROM " . $wpdb->postmeta . " AS pm INNER JOIN " . $wpdb->posts . " AS p ON (pm.post_id=p.ID) WHERE pm.post_id=%d AND pm.meta_key = '_oa_loudvoice_synchronized'";
+		$sql = "SELECT pm.meta_value FROM " . $wpdb->postmeta . " AS pm INNER JOIN " . $wpdb->posts . " AS p ON (pm.post_id=p.ID) WHERE pm.post_id=%d AND pm.meta_key = '_oa_loudvoice_synchronized_discussion_".oa_loudvoice_uniqid()."'";
 		$token = $wpdb->get_var ($wpdb->prepare ($sql, $postid));
 
 		// Make sure we have a result
@@ -162,7 +163,7 @@ function oa_loudvoice_get_postid_for_token ($token)
 	if (strlen ($token) > 0)
 	{
 		// Read post_id for this token.
-		$sql = "SELECT pm.post_id FROM " . $wpdb->postmeta . " AS pm INNER JOIN " . $wpdb->posts . " AS p ON (pm.post_id=p.ID) WHERE pm.meta_key = '_oa_loudvoice_synchronized' AND pm.meta_value=%s";
+		$sql = "SELECT pm.post_id FROM " . $wpdb->postmeta . " AS pm INNER JOIN " . $wpdb->posts . " AS p ON (pm.post_id=p.ID) WHERE pm.meta_key = '_oa_loudvoice_synchronized_discussion_".oa_loudvoice_uniqid()."' AND pm.meta_value=%s";
 		$postid = $wpdb->get_var ($wpdb->prepare ($sql, $token));
 		
 		// Make sure we have a result
@@ -188,7 +189,7 @@ function oa_loudvoice_get_token_for_commentid ($commentid)
 	if (strlen ($commentid) > 0)
 	{
 		// Read user for this token.
-		$sql = "SELECT cm.meta_value FROM " . $wpdb->commentmeta . " AS cm INNER JOIN " . $wpdb->comments . " AS c ON (cm.comment_id=c.comment_ID) WHERE cm.comment_id=%d AND cm.meta_key = '_oa_loudvoice_synchronized'";
+		$sql = "SELECT cm.meta_value FROM " . $wpdb->commentmeta . " AS cm INNER JOIN " . $wpdb->comments . " AS c ON (cm.comment_id=c.comment_ID) WHERE cm.comment_id=%d AND cm.meta_key = '_oa_loudvoice_synchronized_comments_".oa_loudvoice_uniqid()."'";
 		$token = $wpdb->get_var ($wpdb->prepare ($sql, $commentid));
 
 		// Make sure we have a result
@@ -214,7 +215,7 @@ function oa_loudvoice_get_commentid_for_token ($token)
 	if (strlen ($token) > 0)
 	{
 		// Read user for this token.
-		$sql = "SELECT cm.comment_id FROM " . $wpdb->commentmeta . " AS cm INNER JOIN " . $wpdb->comments . " AS c ON (cm.comment_id=c.comment_ID) WHERE cm.meta_key = '_oa_loudvoice_synchronized' AND cm.meta_value=%s";
+		$sql = "SELECT cm.comment_id FROM " . $wpdb->commentmeta . " AS cm INNER JOIN " . $wpdb->comments . " AS c ON (cm.comment_id=c.comment_ID) WHERE cm.meta_key = '_oa_loudvoice_synchronized_comments_".oa_loudvoice_uniqid()."' AND cm.meta_value=%s";
 		$commentid = $wpdb->get_var ($wpdb->prepare ($sql, $token));
 		
 		// Make sure we have a result
@@ -231,17 +232,17 @@ function oa_loudvoice_get_commentid_for_token ($token)
 /**
  * Returns the LoudVoice status for a given WordPress status
  */
-function oa_loudvoice_get_wordpress_approved_status ($moderation_status, $spam_status)
+function oa_loudvoice_get_wordpress_approved_status ($moderation_status, $spam_status, $is_trashed)
 {
-	if ($moderation_status == 'deleted')
+	if ($is_trashed == '1')
 	{
 		return 'trash';
 	}
-	elseif ($spam_status == 'is_spam')
+	elseif ($spam_status == 'spam')
 	{
 		return 'spam';
 	}
-	elseif ($moderation_status == 'unapproved')
+	elseif ($moderation_status == 'refused')
 	{
 		return 0;
 	}
@@ -276,19 +277,31 @@ function oa_loudvoice_get_moderation_status_for_comment ($comment)
 			return 'approved';
 	
 		case '0' :
-		case 'spam' :
 			return 'refused';
 		
-		case 'trash' :
-			return 'deleted';
+		// case 'trash' :
+		// 	return 'deleted';
 			
 		default :
 			return 'unreviewed';
 	}
 }
+
+/**
+ * Returns the LoudVoice moderation status for a given WordPress status
+ */
+function oa_loudvoice_get_is_trashed_status_for_comment ($comment) 
+{
+	switch ($comment->comment_approved)
+	{		
+		case 'trash' :
+			return '1';
+			
+		default :
+			return '0';
+	}
+}
 	
-
-
 /**
  * Returns the avatar for a given userid
  */
@@ -321,7 +334,7 @@ function oa_loudvoice_get_comment_reference_for_commentid ($commentid)
 	// We need the identifier
 	if (!empty ($commentid))
 	{
-		return 'WP-COMMENT-' . intval (trim ($commentid));
+		return 'WP-'.oa_loudvoice_uniqid().'-COMMENT-' . intval (trim ($commentid));
 	}
 	
 	// Error
@@ -358,7 +371,7 @@ function oa_loudvoice_get_author_reference_for_comment ($comment)
 		}
 		
 		// Guest
-		return 'WP-USER-GUEST-COMMENT-' . intval (trim ($comment->comment_ID));
+		return 'WP-'.oa_loudvoice_uniqid().'-USER-GUEST-COMMENT-' . intval (trim ($comment->comment_ID));
 	}
 	
 	// Error
@@ -376,7 +389,7 @@ function oa_loudvoice_get_author_reference_for_user ($user)
 	// We need the identifier
 	if (!empty ($userid))
 	{
-		return 'WP-USER-' . intval (trim ($userid));
+		return 'WP-'.oa_loudvoice_uniqid().'-USER-' . intval (trim ($userid));
 	}
 	
 	// Error
@@ -394,7 +407,7 @@ function oa_loudvoice_get_reference_for_post ($post)
 	// We need the identifier
 	if (!empty ($postid))
 	{
-		return 'WP-POST-' . intval (trim ($postid));
+		return 'WP-'.oa_loudvoice_uniqid().'-POST-' . intval (trim ($postid));
 	}
 	
 	// Error
@@ -418,7 +431,7 @@ function oa_loudvoice_get_link_for_post ($postid)
 }
 
 /**
- * Test if required options are configured to display Loudvoice
+ * Tests if required options are configured to display Loudvoice
  */
 function oa_louddvoice_is_setup ()
 {
@@ -433,6 +446,51 @@ function oa_louddvoice_is_setup ()
 	
 	// Setup incomplete
 	return false;
+}
+
+/**
+ * Returns the unique identifier of this LoudVoice installation
+ */
+function oa_loudvoice_uniqid ()
+{
+	// Read settings
+	$settings = get_option ('oa_loudvoice_settings');
+	
+	// Check if unique identifier exits
+	if (is_array ($settings) && !empty ($settings ['oa_loudvoice_uniqid']))
+	{
+		// Done
+		return $settings ['oa_loudvoice_uniqid'];
+	}
+	// Create Identifier
+	else
+	{
+		// Generate one identifier
+		$settings['oa_loudvoice_uniqid'] = oa_loudvoice_generate_uniqid();
+
+		//Update entire array
+		update_option('oa_loudvoice_settings', $settings);
+
+		// Done
+		return $settings['oa_loudvoice_uniqid'];
+	}
+}
+
+
+/**
+ * Generates a unique id
+ */
+function oa_loudvoice_generate_uniqid($length = 5)
+{
+    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $charactersLength = strlen($characters);
+    $randomString = '';
+    
+    for ($i = 0; $i < $length; $i++)
+    {
+        $randomString .= $characters[rand(0, $charactersLength - 1)];
+    }
+    return $randomString;
 }
 
 /**
@@ -549,7 +607,7 @@ function oa_loudvoice_do_api_request_endpoint ($endpoint, $api_opts = array())
 	$api_subdomain = trim ($settings ['api_subdomain']);
 	
 	// Endpoint
-	$api_resource_url = ($api_connection_use_https ? 'https' : 'http') . '://' . $api_subdomain . '.api.oneall.loc/' . ltrim (trim ($endpoint), '/ ');
+	$api_resource_url = ($api_connection_use_https ? 'https' : 'http') . '://' . $api_subdomain . '.api.oneall.com/' . ltrim (trim ($endpoint), '/ ');
 	
 	// Do request
 	return oa_loudvoice_do_api_request ($api_connection_handler, $api_resource_url, $api_opts);

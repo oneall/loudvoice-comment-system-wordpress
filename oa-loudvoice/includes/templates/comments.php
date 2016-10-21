@@ -1,7 +1,5 @@
 <?php
 
-
-
 // Display a single comment
 function oneall_loudvoice_display_comment( $comment, $args, $depth )
 {	
@@ -98,7 +96,7 @@ if (isset ($settings ['providers']) AND is_array ($settings ['providers']))
 }
 
 // Setup
-$js_library = ((oa_loudvoice_is_https_on () ? 'https' : 'http') . '://' . $settings ['api_subdomain'] . '.api.oneall.loc/socialize/library.js');
+$js_library = ((oa_loudvoice_is_https_on () ? 'https' : 'http') . '://' . $settings ['api_subdomain'] . '.api.oneall.com/socialize/library.js');
 $api_subdomain = (!empty ($oalv_settings ['api_subdomain']) ? $oalv_settings ['api_subdomain'] : '');
 
 
@@ -107,16 +105,17 @@ $comments_container_id = 'oneall_loudvoice_' . mt_rand (99999, 9999999);
 
 // Page Details
 $page_reference = oa_loudvoice_get_reference_for_post ($post);
-$page_title = oa_loudvoice_get_title_for_post ($post);
-$page_url = oa_loudvoice_get_link_for_post ($post);
+$page_title     = oa_loudvoice_get_title_for_post ($post);
+$page_url       = oa_loudvoice_get_link_for_post ($post);
 
+$post_token     = oa_loudvoice_get_token_for_postid ($post->ID);
 
 // Headers
 ?>
 	<div id="comments" class="comments-area">
 		<h2 class="comments-title">
 			<?php
-				printf( _nx( 'One thought on &ldquo;%2$s&rdquo;', '%1$s thoughts on &ldquo;%2$s&rdquo;', get_comments_number(), 'comments title', 'twentyfifteen' ), number_format_i18n( get_comments_number() ), get_the_title() );
+				printf( _nx( '<span class="oa-loudvoice-discussion-token" data-discussion_token="'.$post_token.'">One</span> thought on &ldquo;%2$s&rdquo;', '<span class="oa-loudvoice-discussion-token" data-discussion_token="'.$post_token.'">%1$s</span> thoughts on &ldquo;%2$s&rdquo;', get_comments_number(), 'comments title', 'twentyfifteen' ), number_format_i18n( get_comments_number() ), get_the_title() );
 			?>
 		</h2>
 		<?php 	
@@ -198,7 +197,6 @@ $page_url = oa_loudvoice_get_link_for_post ($post);
 			_oneall.push(['loudvoice', 'set_reference', '<?php echo $page_reference; ?>']);
 			_oneall.push(['loudvoice', 'set_author_session_token', '<?php echo strval ($author_session_token); ?>']);
 			_oneall.push(['loudvoice', 'set_event', 'on_comment_added', function(data) {oa_loudvoice_import_comment ('<?php echo $post->ID; ?>', data);}]);
-			
 			_oneall.push(['loudvoice', 'do_render_ui', '<?php echo $comments_container_id; ?>']);
 		</script>
 	</div>

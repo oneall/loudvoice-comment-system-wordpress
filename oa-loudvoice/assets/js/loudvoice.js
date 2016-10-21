@@ -7,8 +7,6 @@ function oa_loudvoice_import_comment(postid, api_data) {
 			"_ajax_nonce" : oa_loudvoice.nonce
 		};
 		jQuery.post(oa_loudvoice.ajaxurl, post_data, function(response) {
-			alert(response);
 		});
 	}
 };
-

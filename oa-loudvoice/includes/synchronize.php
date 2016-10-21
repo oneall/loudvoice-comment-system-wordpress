@@ -30,7 +30,7 @@ function oa_loudvoice_do_import_comments_for_discussion_token ($verbose, $discus
 	// Is Loudvoice running?
 	if (oa_louddvoice_is_setup ())
 	{		
-		// Post found for this comment
+		// Post found for this token
 		if (($postid = oa_loudvoice_get_postid_for_token ($discussion_token)) !== false)
 		{
 			// Debug
@@ -42,7 +42,7 @@ function oa_loudvoice_do_import_comments_for_discussion_token ($verbose, $discus
 			
 			// Make Request
 			$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/discussions/' . $discussion_token . '/comments.json?page=' . $page . '&entries_per_page=' . $entries_per_page);
-			
+
 			// Check result
 			if (is_object ($api_result) and property_exists ($api_result, 'http_code') and $api_result->http_code == 200)
 			{
@@ -62,16 +62,17 @@ function oa_loudvoice_do_import_comments_for_discussion_token ($verbose, $discus
 						{
 							// Debug
 							oa_loudvoice_debug ($verbose, '  Importing comment_token: ' . $lv_comment->comment_token);
-							
+
 							// Comment found in database
 							if (($commentid = oa_loudvoice_get_commentid_for_token ($lv_comment->comment_token)) !== false)
-							{
-								
+							{								
 								// Full Comment Data
 								if (($wp_data = get_comment ($commentid, 'ARRAY_A')) !== null)
 								{
 									// Update Fields
-									$wp_data ['comment_approved'] = oa_loudvoice_get_wordpress_approved_status ($lv_comment->moderation_status, $lv_comment->spam_status);
+									$wp_data ['comment_approved'] = oa_loudvoice_get_wordpress_approved_status ($lv_comment->moderation_status, $lv_comment->spam_status, $lv_comment->is_trashed);
+
+									$wp_data ['comment_parent'] = ( ! empty ($lv_comment->parent_comment_token) ? oa_loudvoice_get_commentid_for_token ($lv_comment->parent_comment_token) : 0);
 									
 									// Filter
 									$wp_data = wp_filter_comment ($wp_data);
@@ -95,17 +96,17 @@ function oa_loudvoice_do_import_comments_for_discussion_token ($verbose, $discus
 								
 								// Prepare WordPress Comment
 								$wp_data = array(
-									'comment_post_ID' => $postid,
-									'comment_author' => ( ! empty ($lv_comment->author->name) ? $lv_comment->author->name : ''), 
+									'comment_post_ID'      => $postid,
+									'comment_author'       => ( ! empty ($lv_comment->author->name) ? $lv_comment->author->name : ''), 
 									'comment_author_email' => ( ! empty ($lv_comment->author->email) ? $lv_comment->author->email : ''),
-									'comment_author_url' => (! empty ($lv_comment->author->website_url) ? $lv_comment->author->website_url : ''),
-									'comment_content' => $lv_comment->text,
-									'comment_parent' => ( ! empty ($lv_comment->parent_comment_token) ? oa_loudvoice_get_commentid_for_token ($lv_comment->parent_comment_token) : 0),
-									'user_id' => 0,
-									'comment_author_IP' => $lv_comment->ip_address,
-									'comment_agent' => 'Loudvoice/1.0 WordPress',
-									'comment_date_gmt' => date ('Y-m-d G:i:s', strtotime ($lv_comment->date_creation)),
-									'comment_approved' => oa_loudvoice_get_wordpress_approved_status ($lv_comment->moderation_status, $lv_comment->spam_status) 
+									'comment_author_url'   => (! empty ($lv_comment->author->website_url) ? $lv_comment->author->website_url : ''),
+									'comment_content'      => $lv_comment->text,
+									'comment_parent'       => ( ! empty ($lv_comment->parent_comment_token) ? oa_loudvoice_get_commentid_for_token ($lv_comment->parent_comment_token) : 0),
+									'user_id'              => 0,
+									'comment_author_IP'    => $lv_comment->ip_address,
+									'comment_agent'        => 'Loudvoice/1.0 WordPress',
+									'comment_date_gmt'     => date ('Y-m-d G:i:s', strtotime ($lv_comment->date_creation)),
+									'comment_approved'     => oa_loudvoice_get_wordpress_approved_status ($lv_comment->moderation_status, $lv_comment->spam_status, $lv_comment->is_trashed) 
 								);
 								
 								// Filter
@@ -118,16 +119,25 @@ function oa_loudvoice_do_import_comments_for_discussion_token ($verbose, $discus
 								$result ['created'] [$commentid] = $lv_comment->comment_token;
 								
 								// Update Meta
-								add_post_meta ($postid, '_oa_loudvoice_synchronized_comments', $lv_comment->comment_token, false);
-								update_post_meta ($postid, '_oa_loudvoice_synchronized', $discussion_token);
+								add_post_meta ($postid, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid(), $lv_comment->comment_token, false);
+								update_post_meta ($postid, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid(), $discussion_token);
 								
 								// Save Comment Meta
-								update_comment_meta ($commentid, '_oa_loudvoice_synchronized_discussion', $discussion_token);
-								update_comment_meta ($commentid, '_oa_loudvoice_synchronized', $lv_comment->comment_token);
-								
+								update_comment_meta ($commentid, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid(), $discussion_token);
+								update_comment_meta ($commentid, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid(), $lv_comment->comment_token);
+
 								// Debug
 								oa_loudvoice_debug ($verbose, '  CREATED WordPress Comment #' . $commentid);
 							}
+
+							// Trash comment and add meta if comments wasn't refused in LoudVoice
+							// So when comments are trashed in WP, you can restore them and keep approved status
+							if ($lv_comment->is_trashed == 1 && $lv_comment->moderation_status != 'refused')
+							{
+								add_comment_meta( $commentid, '_wp_trash_meta_status', 1 );
+								add_comment_meta( $commentid, '_wp_trash_meta_time', time() );
+							}
+								
 						}
 					}
 					
@@ -175,8 +185,8 @@ function oa_loudvoice_do_import ($verbose, $page = 1, $entries_per_page = 50)
 		oa_loudvoice_debug ($verbose, 'Importing Discussions, Page: ' . $page . ' / Entries Per Page: ' . $entries_per_page);
 		
 		// Make Request
-		$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/discussions.json?page=' . $page . '&entries_per_page=' . $entries_per_page);
-		
+		$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/discussions.json?page=' . $page . '&entries_per_page=' . $entries_per_page. '&realm=WP-'.oa_loudvoice_uniqid());
+
 		// Check result
 		if (is_object ($api_result) and property_exists ($api_result, 'http_code') and $api_result->http_code == 200)
 		{
@@ -224,8 +234,11 @@ function oa_loudvoice_do_import ($verbose, $page = 1, $entries_per_page = 50)
  */
 function oa_loudvoice_import ($verbose = false)
 {
-	// Import
-	$result = oa_loudvoice_do_import ($verbose);
+	ob_start ();
+	echo "\n[ === IMPORT LOG BELOW === ]\n";
+	$result = oa_loudvoice_do_import (true);
+	$verbose = ob_get_contents ();
+	ob_end_clean ();
 	
 	// Display Result
 	if (is_array ($result))
@@ -244,11 +257,48 @@ function oa_loudvoice_import ($verbose = false)
 	
 	// Cleanup Meta
 	oa_loudvoice_cleanup_post_comment_meta ();
-	
+
 	// Done
 	return $result;
 }
-add_action ('wp_ajax_oa_loudvoice_import', 'oa_loudvoice_import');
+
+/**
+ * Import all comments from WordPress to Loudvoice, Ajax Call
+ */
+function oa_loudvoice_import_ajax ()
+{
+	ob_start ();
+	echo "\n[ === IMPORT LOG BELOW === ]\n\n";
+	$result = oa_loudvoice_import (true);
+	$verbose = ob_get_contents ();
+	ob_end_clean ();
+	
+	// Statistics
+	$num_discussions = 0;
+	$num_comments = 0;
+	
+	// Compute Result
+	if (is_array ($result))
+	{
+		foreach ($result as $postid => $post_data)
+		{
+		
+			if(!empty($post_data['created']) || !empty($post_data['updated']) ){
+				$num_discussions ++;
+			}
+			
+			foreach ($post_data as $key => $data)
+			{
+				$num_comments += count ($data);
+			}
+		}
+	}
+	
+	// Done
+	die ('success|import_done|' . $num_discussions . ' post(s) and ' . $num_comments . ' comment(s) have been processed|' . $verbose);
+}
+add_action ('wp_ajax_oa_loudvoice_import', 'oa_loudvoice_import_ajax');
+
 
 // ////////////////////////////////////////////////////////////////////////////////////////////////
 // EXPORT
@@ -269,7 +319,7 @@ function oa_loudvoice_do_export ($verbose = false)
 	if (oa_louddvoice_is_setup ())
 	{
 		// Read Published Posts
-		$sql = "SELECT * FROM " . $wpdb->posts . " WHERE post_type != 'revision' AND post_status = 'publish' ORDER BY ID ASC";
+		$sql = "SELECT * FROM " . $wpdb->posts . " WHERE post_type = 'post' AND post_status = 'publish' ORDER BY ID ASC";
 		$posts = $wpdb->get_results ($sql);
 		
 		// Loop through results
@@ -351,6 +401,8 @@ function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
 		'created' => array(),
 		'updated' => array() 
 	);
+
+	$wp_all_discussions = array('realm' => 'WP-'.oa_loudvoice_uniqid(), 'discussions' => array());
 	
 	// Is Loudvoice running?
 	if (oa_louddvoice_is_setup ())
@@ -370,9 +422,10 @@ function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
 				'post_data' => json_encode (array(
 					'request' => array(
 						'discussion' => array(
-							'title' => oa_loudvoice_get_title_for_post ($post),
-							'url' => oa_loudvoice_get_link_for_post ($post),
-							'discussion_reference' => $discussion_reference,
+							'realm'                             => 'WP-'.oa_loudvoice_uniqid(),
+							'title'                             => oa_loudvoice_get_title_for_post ($post),
+							'url'                               => oa_loudvoice_get_link_for_post ($post),
+							'discussion_reference'              => $discussion_reference,
 							'allow_create_discussion_reference' => true 
 						) 
 					) 
@@ -399,9 +452,14 @@ function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
 					
 					// Token
 					$discussion_token = $lv_discussion->discussion_token;
+
+					//save discussion
+					$wp_all_discussions['discussions'][$postid] = array(
+						'reference' => $discussion_reference
+					); 
 					
 					// Update Meta
-					update_post_meta ($postid, '_oa_loudvoice_synchronized', $discussion_token);
+					update_post_meta ($postid, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid(), $discussion_token);
 					
 					// Now we synchronize the comments
 					$sql = "SELECT * FROM " . $wpdb->comments . " WHERE comment_post_ID='" . $postid . "' AND comment_type != 'trackback' AND comment_type != 'pingback' ORDER BY comment_parent ASC";
@@ -411,7 +469,7 @@ function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
 					if (is_array ($wp_comments))
 					{
 						// Cleanup synchronized comments
-						delete_post_meta ($postid, '_oa_loudvoice_synchronized_comments');
+						delete_post_meta ($postid, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid());
 						
 						// Loop through comments
 						foreach ($wp_comments as $wp_comment)
@@ -421,7 +479,14 @@ function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
 							
 							// Read the token
 							$comment_token = oa_loudvoice_get_token_for_commentid ($commentid);
-							
+
+							//save discussion
+							$wp_all_discussions['discussions'][$postid]['comments'][$commentid] = oa_loudvoice_get_comment_reference_for_comment ($wp_comment); 
+
+							//save comments
+							$wp_discussions[] = array('id' => $postid, 'reference' => $discussion_reference, 'token' => $discussion_token); 
+
+				
 							// Read the parent token
 							if ( ! empty ($wp_comment->comment_parent))
 							{
@@ -454,8 +519,8 @@ function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
 										oa_loudvoice_debug ($verbose, '   Orphan Comment Token Found (+Meta Removed)');
 										
 										// Remove Comment Meta
-										delete_comment_meta ($commentid, '_oa_loudvoice_synchronized_discussion');
-										delete_comment_meta ($commentid, '_oa_loudvoice_synchronized');
+										delete_comment_meta ($commentid, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid());
+										delete_comment_meta ($commentid, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid());
 										
 										// Reset Token
 										$comment_token = null;
@@ -472,21 +537,23 @@ function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
 											'discussion_token' => $discussion_token 
 										),
 										'comment' => array(
-											'parent_comment_token' => $parent_comment_token,
-											'comment_token' => $comment_token,
-											'comment_reference' => oa_loudvoice_get_comment_reference_for_comment ($wp_comment),
-											'allow_create_comment_reference' => true,
+											'realm'                           => 'WP-'.oa_loudvoice_uniqid(),
+											'parent_comment_token'            => $parent_comment_token,
+											'comment_token'                   => $comment_token,
+											'comment_reference'               => oa_loudvoice_get_comment_reference_for_comment ($wp_comment),
+											'allow_create_comment_reference'  => true,
 											'allow_create_duplicate_comments' => true,
-											'moderation_status' => oa_loudvoice_get_moderation_status_for_comment ($wp_comment),
-											'spam_status' => oa_loudvoice_get_spam_status_for_comment ($wp_comment),
-											'text' => $wp_comment->comment_content,
+											'moderation_status'               => oa_loudvoice_get_moderation_status_for_comment ($wp_comment),
+											'spam_status'                     => oa_loudvoice_get_spam_status_for_comment ($wp_comment),
+											'is_trashed'                      => oa_loudvoice_get_is_trashed_status_for_comment ($wp_comment),
+											'text'                            => $wp_comment->comment_content,
 											'author' => array(
 												'author_reference' => oa_loudvoice_get_author_reference_for_comment ($wp_comment),
-												'name' => $wp_comment->comment_author,
-												'email' => $wp_comment->comment_author_email,
-												'website_url' => $wp_comment->comment_author_url,
-												'picture_url' => oa_loudvoice_get_avatar_url ($wp_comment->user_id, $wp_comment->comment_author_email),
-												'ip_address' => $wp_comment->comment_author_IP 
+												'name'             => $wp_comment->comment_author,
+												'email'            => $wp_comment->comment_author_email,
+												'website_url'      => $wp_comment->comment_author_url,
+												'picture_url'      => oa_loudvoice_get_avatar_url ($wp_comment->user_id, $wp_comment->comment_author_email),
+												'ip_address'       => $wp_comment->comment_author_IP 
 											) 
 										) 
 									) 
@@ -495,7 +562,7 @@ function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
 							
 							// Push post to Loudvoice
 							$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/comments.json', $lv_data);
-							
+
 							// Check result (201: created, 200: already exists)
 							if (is_object ($api_result) && property_exists ($api_result, 'http_code'))
 							{
@@ -512,12 +579,12 @@ function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
 									oa_loudvoice_debug ($verbose, '    Comment Token: ' . $comment_token);
 									
 									// Save Post Meta
-									add_post_meta ($postid, '_oa_loudvoice_synchronized_comments', $comment_token, false);
-									update_post_meta ($postid, '_oa_loudvoice_synchronized', $discussion_token);
+									add_post_meta ($postid, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid(), $comment_token, false);
+									update_post_meta ($postid, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid(), $discussion_token);
 									
 									// Save Comment Meta
-									update_comment_meta ($commentid, '_oa_loudvoice_synchronized_discussion', $discussion_token);
-									update_comment_meta ($commentid, '_oa_loudvoice_synchronized', $comment_token);
+									update_comment_meta ($commentid, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid(), $discussion_token);
+									update_comment_meta ($commentid, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid(), $comment_token);
 									
 									// Updated
 									$result [($api_result->http_code == 201 ? 'created' : 'updated')] [$commentid] = $comment_token;
@@ -540,7 +607,43 @@ function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
 			}
 		}
 	}
+
+
+	// ********************
+	// Remove/Trash old discussions/comments in LoudVoice
+	// ********************
+
+	// API Data
+	$lv_data = array(
+		'method' => 'DELETE',
+		'post_data' => json_encode (array(
+			'request' => $wp_all_discussions
+		)) 
+	);
 	
+	// Push post to Loudvoice
+	$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/clean.json', $lv_data);
+
+	// Check result
+	if (is_object ($api_result) and property_exists ($api_result, 'http_code'))
+	{				
+		if ($api_result->http_code == 200)
+		{
+			// Decode result
+			$json = @json_decode ($api_result->http_data);
+
+			// Make sure it's valid
+			if (is_object ($json) and isset ($json->response->result->data->nb_removed_discussion))
+			{
+				if ($json->response->result->data->nb_removed_discussion > 0 || $json->response->result->data->nb_removed_comments > 0){
+					oa_loudvoice_debug ($verbose, '   Cleanup : discussions : ' . $json->response->result->data->nb_removed_discussion.' - comments : ' . $json->response->result->data->nb_removed_comments);
+				}
+			}
+
+		}
+	}
+
+
 	// Done
 	return $result;
 }
@@ -587,8 +690,7 @@ function oa_loudvoice_import_comment_ajax ()
 						// Loudvoice Objects
 						$lv_discussion = $json->response->result->data->discussion;
 						$lv_comment = $json->response->result->data->comment;
-						
-					
+
 						// Validate the references before doing anything else
 						if ($lv_discussion->discussion_reference == oa_loudvoice_get_reference_for_post ($postid))
 						{
@@ -607,7 +709,7 @@ function oa_loudvoice_import_comment_ajax ()
 									'comment_author_IP' => $lv_comment->ip_address,
 									'comment_agent' => 'Loudvoice/1.0 WordPress',
 									'comment_date_gmt' => date ('Y-m-d G:i:s', strtotime ($lv_comment->date_creation)),
-									'comment_approved' => oa_loudvoice_get_wordpress_approved_status ($lv_comment->moderation_status, $lv_comment->spam_status) 
+									'comment_approved' => oa_loudvoice_get_wordpress_approved_status ($lv_comment->moderation_status, $lv_comment->spam_status, $lv_comment->is_trashed) 
 								);
 								
 								// Filter
@@ -617,12 +719,12 @@ function oa_loudvoice_import_comment_ajax ()
 								$commentid = wp_insert_comment ($data);
 								
 								// Save Post Meta
-								add_post_meta ($postid, '_oa_loudvoice_synchronized_comments', $lv_comment->comment_token, false);
-								update_post_meta ($postid, '_oa_loudvoice_synchronized', $lv_discussion->discussion_token);
+								add_post_meta ($postid, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid(), $lv_comment->comment_token, false);
+								update_post_meta ($postid, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid(), $lv_discussion->discussion_token);
 								
 								// Save Comment Meta
-								update_comment_meta ($commentid, '_oa_loudvoice_synchronized_discussion', $lv_discussion->discussion_token);
-								update_comment_meta ($commentid, '_oa_loudvoice_synchronized', $lv_comment->comment_token);
+								update_comment_meta ($commentid, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid(), $lv_discussion->discussion_token);
+								update_comment_meta ($commentid, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid(), $lv_comment->comment_token);
 								
 								// Synchronized
 								$status_message = 'success_comment_synchronized';

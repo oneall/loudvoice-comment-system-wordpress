@@ -1,12 +1,13 @@
 <?php
 /*
- * Plugin Name: Loudvoice Comments Platform 
- * URI: http://www.oneall.com/ 
- * Description: Loudvoice replaces your WordPress comments by a <strong>powerful comments platform</strong> that includes logging in with 30+ social networks, spam filters and automatic backups. 
- * Version: 1.0 
- * Author: OneAll <support@oneall.com> 
- * Author URI: http://www.oneall.com/
- */
+Plugin Name: LoudVoice Comment System 
+Plugin URI: http://www.oneall.com/
+Description: LoudVoice replaces the basic WordPress comments by a <strong>powerful comment system</strong> that includes logging in with 30+ social networks, spam filters and automatic backups. 
+Version: 1.0 
+Author: OneAll <support@oneall.com> 
+Author URI: http://www.oneall.com/
+License: GPL2
+*/
 define ('OA_LOUDVOICE_PLUGIN_URL', plugins_url () . '/' . basename (dirname (__FILE__)));
 define ('OA_LOUDVOICE_BASE_PATH', dirname (plugin_basename (__FILE__)));
 define ('OA_LOUDVOICE_VERSION', '1.0');
@@ -17,6 +18,9 @@ define ('OA_LOUDVOICE_ALLOWED_HTML_TAGS', '<b><u><i><h1><h2><h3><code><blockquot
  */
 function oa_loudvoice_activate ()
 {
+	// Generate UniqID
+	oa_loudvoice_uniqid ();
+	
 	if (!function_exists ('register_post_status'))
 	{
 		deactivate_plugins (basename (dirname (__FILE__)) . '/' . basename (__FILE__));
@@ -55,13 +59,10 @@ require_once (dirname (__FILE__) . '/includes/toolbox.php');
 require_once (dirname (__FILE__) . '/includes/synchronize.php');
 require_once (dirname (__FILE__) . '/includes/frontend.php');
 require_once (dirname (__FILE__) . '/includes/backend.php');
-// require_once(dirname (__FILE__) . '/includes/user_interface.php');
-// require_once(dirname (__FILE__) . '/includes/widget.php');
 
 /**
- * dd language file
+ * Add language file
  */
-
 if (function_exists ('load_plugin_textdomain'))
 {
 	load_plugin_textdomain ('oa_loudvoice', false, OA_LOUDVOICE_BASE_PATH . '/languages/');

@@ -68,7 +68,7 @@ jQuery(document).ready(function($) {
 		
 		data = {
 			_ajax_nonce: objectL10n.oa_loudvoice_ajax_nonce,
-			action: 'autodetect_api_connection_handler'
+			action: 'oa_loudvoice_autodetect_api_connection_handler'
 		};
 		
 		message_container = jQuery('#oa_loudvoice_api_connection_handler_result');	

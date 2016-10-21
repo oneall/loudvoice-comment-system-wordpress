@@ -1,8 +1,74 @@
 <?php
 
+/**
+ * Add span with custom class on comments number counters
+ */
+function oa_loudvoice_comments_number($num_comments)
+{
+    global $post;
+    
+	if (! empty ($post->ID))
+	{    
+	    $post_token = oa_loudvoice_get_token_for_postid ($post->ID);
+	    
+	    if (oa_louddvoice_is_setup ())
+	    {
+	        return '<span class="oa-loudvoice-discussion-token" data-discussion_token="'.esc_attr($post_token).'">'.$num_comments.'</span>';
+	    }
+	    else
+	    {
+	        return $num_comments;
+	    }
+	}
+}
+add_filter('comments_number', 'oa_loudvoice_comments_number');
+
+
+/** 
+ *  Force dashboard comment links to prevent other plugins to edit them
+ */ 
+function oa_loudvoice_load_dashboardjs_scripts()
+{
+    wp_register_script ('dashboard_script', plugins_url('../assets/js/dashboard.js', __FILE__ ) );
+    wp_enqueue_script ('dashboard_script', plugins_url('../assets/js/dashboard.js', __FILE__ ), array( 'jQuery') );
+}
+add_action('admin_enqueue_scripts', 'oa_loudvoice_load_dashboardjs_scripts');
+
+
 // /////////////////////////////////////////////////////////////////////////////////////////////////
 // ADMIN GUI
 // /////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Adds a warning in edit-comments.php page to prevent user to use old way to manage his comments
+ */
+function oa_loudvoice_edit_comments_message ()
+{
+	if (oa_louddvoice_is_setup () && function_exists ('get_current_screen'))
+	{
+		$screen = get_current_screen();
+		
+		if (is_object ($screen) && isset ($screen->base) && $screen->base == 'edit-comments')
+		{
+			echo '
+			<div class="wrap">
+				<div class="oa_loudvoice_box " id="oa_loudvoice_box_danger">
+					<div class="oa_loudvoice_box_title">
+						'. __ ('Be Careful', 'oa_loudvoice') .'
+					</div>
+					<div class="oa_loudvoice_box_content">					
+						<div><strong>'. __ ('You are currently using the LoudVoice comment platform.').'</strong></div>
+						<div>'. __ ('If you manage your comments on this page, they will not be updated on LoudVoice unless you <a href="admin.php?page=oa_loudvoice_synchronize">export</a> them manually.', 'oa_loudvoice') .'</div>
+						<div>'. __ ('The best solution is to access the LoudVoice comment management system and to mange your comments from there.', 'oa_loudvoice') .'</div>
+						<div><p><a class="button-secondary" href="https://app.oneall.com/loudvoice/" target="_blank"><strong> '. __ ('Click here to manage your comments', 'oa_loudvoice') .'</strong></a></p></div>
+				    </div>
+				</div>
+			</div>';		
+		}
+	}
+}
+add_action ('admin_notices', 'oa_loudvoice_edit_comments_message');
+
 
 /**
  * Adds a warning to be displayed when LoudVoice needs to be setup
@@ -15,18 +81,27 @@ function oa_loudvoice_admin_message ()
 	}
 }
 
+
 /**
  * Adds the administration area links
  */
 function oa_loudvoice_admin_menu ()
 {
 	// Setup
-	$page = add_menu_page ('OneAll LoudVoice Comments Platform ' . __ ('Setup', 'oa_loudvoice'), 'LoudVoice', 'manage_options', 'oa_loudvoice_settings', 'oa_loudvoice_display_settings');
+	$page = add_menu_page ('OneAll LoudVoice Comments Platform ' . __ ('Setup', 'oa_loudvoice'), 'LoudVoice', 'manage_options', 'oa_loudvoice_settings', 'oa_loudvoice_display_settings', 'dashicons-admin-comments');
 	add_action ('admin_print_styles-' . $page, 'oa_loudvoice_admin_css');
 	
 	// Settings
 	$page = add_submenu_page ('oa_loudvoice_settings', 'OneAll LoudVoice Comments Platform ' . __ ('Synchronize', 'oa_loudvoice'), __ ('Synchronize', 'oa_loudvoice'), 'manage_options', 'oa_loudvoice_synchronize', 'oa_loudvoice_display_synchronize');
 	add_action ('admin_print_styles-' . $page, 'oa_loudvoice_admin_css');
+
+	//More+
+    $page= add_submenu_page ('oa_loudvoice_settings', 'OneAll LoudVoice Comments Platform ' . __ ('+More'), __ ('+More'), 'manage_options', 'oa_loudvoice_more', 'oa_display_loudvoice_more');
+	add_action ('admin_print_styles-' . $page, 'oa_loudvoice_admin_css');
+
+
+	// add our css in edit comments
+	add_action ('admin_print_styles-edit-comments.php', 'oa_loudvoice_admin_css');
 	
 	// Fix Setup title
 	global $submenu;
@@ -34,6 +109,7 @@ function oa_loudvoice_admin_menu ()
 	{
 		$submenu ['oa_loudvoice_settings'] [0] [0] = __ ('Setup', 'oa_loudvoice');
 	}
+
 	
 	add_action ('admin_notices', 'oa_loudvoice_admin_message');
 	add_action ('admin_enqueue_scripts', 'oa_loudvoice_admin_js');
@@ -100,7 +176,6 @@ function oa_loudvoice_admin_js ($hook)
 	}
 }
 
-
 /**
  * Autodetects the API Connection Handler
  */
@@ -156,7 +231,7 @@ function oa_loudvoice_admin_autodetect_api_connection_handler ()
 	echo 'error_autodetect_api_no_handler';
 	die ();
 }
-add_action ('wp_ajax_autodetect_api_connection_handler', 'oa_loudvoice_admin_autodetect_api_connection_handler');
+add_action ('wp_ajax_oa_loudvoice_autodetect_api_connection_handler', 'oa_loudvoice_admin_autodetect_api_connection_handler');
 
 /**
  * Check API Settings through an Ajax Call
@@ -217,7 +292,7 @@ function oa_loudvoice_admin_check_api_settings ()
 	}
 	
 	// Domain
-	$api_domain = $api_subdomain . '.api.oneall.loc';
+	$api_domain = $api_subdomain . '.api.oneall.com';
 	
 	// Connection to
 	$api_resource_url = ($api_connection_use_https ? 'https' : 'http') . '://' . $api_domain . '/tools/ping.json';
@@ -402,7 +477,8 @@ function oa_loudvoice_display_synchronize ()
 				<h2>OneAll LoudVoice <?php echo (defined ('OA_LOUDVOICE_VERSION') ? OA_LOUDVOICE_VERSION : ''); ?></h2>
 				<h2 class="nav-tab-wrapper">
 					<a class="nav-tab" href="admin.php?page=oa_loudvoice_settings"><?php _e ('Setup', 'oa_loudvoice'); ?></a>
-					<a class="nav-tab nav-tab-active" href="admin.php?page=oa_loudvoice_synchronize"><?php _e ('Synchronize', 'oa_loudvoice'); ?></a>
+					<a class="nav-tab nav-tab-active" href="admin.php?page=oa_loudvoice_synchronize"><?php _e ('Synchronize', 'oa_loudvoice'); ?></a>					
+          			<a class="nav-tab" href="admin.php?page=oa_loudvoice_more"><?php _e ('+More', 'oa_loudvoice'); ?></a>
 				</h2>										
 				<?php 					
 					if (!oa_louddvoice_is_setup ())
@@ -451,7 +527,10 @@ function oa_loudvoice_display_synchronize ()
 										<a class="button-secondary oa_loudvoice_sync" id="oa_loudvoice_import" href="#" ><strong><?php _e ('Import Comments', 'oa_loudvoice'); ?></strong></a>
 									</p>											
 								</div>	
-								<div class="oa_loudvoice_box_footer"><div id="oa_loudvoice_import_result"></div></div>							
+								<div class="oa_loudvoice_box_footer">
+									<div id="oa_loudvoice_import_result"></div>
+									<textarea id="oa_loudvoice_import_verbose"></textarea>
+								</div>						
 							</div>
 						<?php 
 					}
@@ -475,7 +554,8 @@ function oa_loudvoice_display_settings ()
 				<h2>OneAll LoudVoice <?php echo (defined ('OA_LOUDVOICE_VERSION') ? OA_LOUDVOICE_VERSION : ''); ?></h2>
 				<h2 class="nav-tab-wrapper">
 					<a class="nav-tab nav-tab-active" href="admin.php?page=oa_loudvoice_settings"><?php _e ('Setup', 'oa_loudvoice'); ?></a>
-					<a class="nav-tab" href="admin.php?page=oa_loudvoice_synchronize"><?php _e ('Synchronize', 'oa_loudvoice'); ?></a>
+					<a class="nav-tab" href="admin.php?page=oa_loudvoice_synchronize"><?php _e ('Synchronize', 'oa_loudvoice'); ?></a>					
+          			<a class="nav-tab" href="admin.php?page=oa_loudvoice_more"><?php _e ('+More', 'oa_loudvoice'); ?></a>
 				</h2>
 				<?php
 					if (get_option ('oa_loudvoice_api_settings_verified') !== '1')
@@ -535,6 +615,24 @@ function oa_loudvoice_display_settings ()
 						settings_fields ('oa_loudvoice_settings_group');
 						$settings = get_option ('oa_loudvoice_settings');
 					?>
+
+					
+					<table class="form-table oa_loudvoice_table">
+						<tr class="row_head">
+							<th colspan="2">
+								<?php _e ('Unique Identifier for comments synchronization', 'oa_loudvoice'); ?>
+							</th>
+						</tr>
+						<tr class="row_even">
+							<td style="width: 250px">
+								<label for="oa_loudvoice_settings_api_uniqid"><?php _e ('Identifier', 'oa_loudvoice'); ?>:</label>
+							</td>
+							<td>
+								<?php echo (isset ($settings ['oa_loudvoice_uniqid']) ? htmlspecialchars ($settings ['oa_loudvoice_uniqid']) : ''); ?>
+							</td>
+						</tr>
+					</table>
+
 
 					<table class="form-table oa_loudvoice_table">
 						<tr class="row_head">
@@ -683,7 +781,7 @@ function oa_loudvoice_display_settings ()
 							<td class="row_multi"> 
 								<input type="radio"	id="oa_loudvoice_disable_auto_comment_import_1" name="oa_loudvoice_settings[disable_auto_comment_import]" value="1" <?php echo ($disable_auto_comment_import <> 0 ? 'checked="checked"' : ''); ?> />
 								<label for="oa_loudvoice_disable_auto_comment_import_1"><?php _e ('No, I will import the comment on my own', 'oa_loudvoice'); ?></strong></label><br />
-								<span class="description"><?php _e ('You manually run Synchronize\Import to store LoudVoice comments in your database.', 'oa_loudvoice'); ?></span>						
+								<span class="description"><?php _e ('You need to manually run Synchronize\Import to store LoudVoice comments in your database.', 'oa_loudvoice'); ?></span>						
 							</td>
 						</tr>		
 						
@@ -751,3 +849,62 @@ function oa_loudvoice_display_settings ()
 		</div>
 	<?php
 }
+
+
+
+
+
+/**
+ * Display More Page
+ **/
+function oa_display_loudvoice_more ()
+{
+	// Plugin URL
+	$plugin_url = admin_url('plugin-install.php?s=oneall.com&tab=search&type=term');
+	
+	?>
+		<div class="wrap">
+			<div id="oa_loudvoice" class="oa_loudvoice_more">			
+				<h2>OneAll LoudVoice <?php echo (defined ('OA_LOUDVOICE_VERSION') ? OA_LOUDVOICE_VERSION : ''); ?></h2>
+				<h2 class="nav-tab-wrapper">
+					<a class="nav-tab" href="admin.php?page=oa_loudvoice_settings"><?php _e ('Setup', 'oa_loudvoice'); ?></a>
+					<a class="nav-tab" href="admin.php?page=oa_loudvoice_synchronize"><?php _e ('Synchronize', 'oa_loudvoice'); ?></a>
+          			<a class="nav-tab nav-tab-active" href="admin.php?page=oa_loudvoice_more"><?php _e ('+More', 'oa_loudvoice'); ?></a>
+        		</h2>
+        		<p></p>
+				<div class="oa_loudvoice_box" id="oa_loudvoice_box_help">
+					<div class="oa_loudvoice_box_title">
+						<?php _e ('Help, Updates &amp; Documentation', 'oa_loudvoice'); ?>
+					</div>
+					<ul>
+						<li><?php printf (__ ('<a target="_blank" href="%s">Follow us on Twitter</a> to stay informed about updates', 'oa_loudvoice'), 'http://www.twitter.com/oneall'); ?>;</li>
+						<li><?php printf (__ ('<a target="_blank" href="%s">Read the online documentation</a> for more information about this plugin', 'oa_loudvoice'), 'http://docs.oneall.com/plugins/guide/social-login-wordpress/'); ?>;</li>
+						<li><?php printf (__ ('<a target="_blank" href="%s">Contact us</a> if you have feedback or need assistance', 'oa_loudvoice'), 'http://www.oneall.com/company/contact-us/'); ?>.
+						<li><?php printf (__ ('We also have <a target="_blank" href="%s">turnkey plugins</a> for Drupal, PrestaShop, Joomla, phpBB andy many others ...', 'oa_loudvoice'), 'http://docs.oneall.com/plugins/'); ?>.
+						</li>
+					</ul>
+				</div>
+				
+				<table class="form-table oa_loudvoice_table">
+					<tr class="row_head">
+						<th>
+							<?php _e ('Discover other plugins from OneAll', 'oa_loudvoice'); ?>
+						</th>
+					</tr>
+					<tr class="row_even">
+						<td class="col_unpadded">
+							<a href="<?php echo $plugin_url; ?>" class="social-sharing" title="<?php _e ('Get it now!', 'oa_loudvoice'); ?>"></a>
+						</td>
+					</tr>
+					<tr class="row_even">				
+						<td>
+							<?php _e ('Easy to use and 100% FREE Social Sharing Icons & Share Buttons for WordPress. Allow your users to share posts and pages to 30+ Social Networks. Integrates with Social Login. No additional setup required.', 'oa_loudvoice'); ?>
+							<strong><a href="<?php echo $plugin_url; ?>"><?php _e ('Click For More Information', 'oa_loudvoice'); ?></a></strong>
+						</td>
+					</tr>
+				</table>				
+			</div>
+		</div>
+	<?php
+}    
+
