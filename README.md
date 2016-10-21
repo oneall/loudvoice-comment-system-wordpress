@@ -1,5 +1,5 @@
 # LoudVoice
-LoudVoice replaces the basic WordPress comments by a **powerful comment system**> that includes logging in with 
+LoudVoice replaces the basic WordPress comments by a **powerful comment system** that includes logging in with 
 30+ social networks, spam filters and more.
  
  
@@ -9,9 +9,9 @@ LoudVoice replaces the basic WordPress comments by a **powerful comment system**
 * Activate the plugin through the **Plugins** menu in WordPress administration area,
 * Navigate to the **LoudVoice** administration page to setup the plugin.
   
- ## Official WordPress plugin
+    
+## Official WordPress plugin
 https://wordpress.org/plugins/loudvoice-comment-system/
-
 
 
 ## Features
