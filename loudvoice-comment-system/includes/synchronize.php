@@ -104,7 +104,7 @@ function oa_loudvoice_do_import_comments_for_discussion_token ($verbose, $discus
 									'comment_parent'       => ( ! empty ($lv_comment->parent_comment_token) ? oa_loudvoice_get_commentid_for_token ($lv_comment->parent_comment_token) : 0),
 									'user_id'              => 0,
 									'comment_author_IP'    => $lv_comment->ip_address,
-									'comment_agent'        => 'Loudvoice/1.0 WordPress',
+									'comment_agent'        => 'Loudvoice/1.1 WordPress',
 									'comment_date_gmt'     => date ('Y-m-d G:i:s', strtotime ($lv_comment->date_creation)),
 									'comment_approved'     => oa_loudvoice_get_wordpress_approved_status ($lv_comment->moderation_status, $lv_comment->spam_status, $lv_comment->is_trashed) 
 								);
@@ -678,7 +678,7 @@ function oa_loudvoice_import_comment_ajax ()
 
 			// Check result
 			if (is_object ($api_result) and property_exists ($api_result, 'http_code'))
-			{				
+			{			
 				if ($api_result->http_code == 200)
 				{
 					// Decode result
@@ -707,7 +707,7 @@ function oa_loudvoice_import_comment_ajax ()
 									'comment_parent' => ( ! empty ($lv_comment->parent_comment_token) ? oa_loudvoice_get_commentid_for_token ($lv_comment->parent_comment_token) : 0),
 									'user_id' => 0,
 									'comment_author_IP' => $lv_comment->ip_address,
-									'comment_agent' => 'Loudvoice/1.0 WordPress',
+									'comment_agent' => 'Loudvoice/1.1 WordPress',
 									'comment_date_gmt' => date ('Y-m-d G:i:s', strtotime ($lv_comment->date_creation)),
 									'comment_approved' => oa_loudvoice_get_wordpress_approved_status ($lv_comment->moderation_status, $lv_comment->spam_status, $lv_comment->is_trashed) 
 								);

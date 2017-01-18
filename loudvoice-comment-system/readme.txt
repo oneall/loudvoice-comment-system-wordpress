@@ -2,8 +2,8 @@
 Contributors: Damien Zara, OneAll.com
 Tags: comments, comment, system, realtime, commenting, comment system, comments system, wordpress comments, discuss, discussion, discussion, spam, threaded, social networks, facebook, twitter, linkedin
 Requires at least: 3.0
-Tested up to: 4.6
-Stable tag: 1.0
+Tested up to: 4.7.1
+Stable tag: 1.1
  
 LoudVoice replaces the basic WordPress comments by a <strong>powerful comment system</strong> that includes logging in with 30+ social networks,
 spam filters and more.
@@ -98,6 +98,10 @@ http://support.oneall.com/forums/
 
 
 == Changelog ==
+
+= 1.1 =
+* Comments counter fixed
+* Comment synchronization improved
 
 = 1.0 =
 * Initial release

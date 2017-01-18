@@ -1,17 +1,23 @@
 jQuery(document).ready(function($) {
 
-    //get all tokens
-    var tokens = [];
-    jQuery('.oa-loudvoice-discussion-token').each(function(){
-        tokens.push(jQuery(this).data('discussion_token'));
-    });
+	/* Get all discussion tokens */
+	var discussion_tokens = [];
+	jQuery('.loudvoice-comments-counter').each(function() {
+		var discussion_token = jQuery(this).data('discussion_token');
+		if (typeof (discussion_token) !== 'undefined' && discussion_token.length > 0) {
+			discussion_tokens.push(discussion_token);
+		}
+	});
 
-    //unique tokens
-    tokens = jQuery.unique( tokens );
+	/* Remove duplicates */
+	discussion_tokens = jQuery.unique(discussion_tokens);
 
-    //load oneall libray 
-    var s = document.createElement('script'); s.async = true;
-    s.type = 'text/javascript';
-    s.src = count_library+tokens.join(';');
-    (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+	/* Load Counter Updater */
+	if (discussion_tokens.length > 0) {
+		var s = document.createElement('script');
+		s.type = 'text/javascript'; s.async = true;
+		s.src = count_library + '?discussions_tokens=' + discussion_tokens.join(';');
+		(document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+	}
+	
 }());

@@ -25,7 +25,7 @@ function oa_loudvoice_comments_count() {
 	// Read settings
 	$settings = get_option ('oa_loudvoice_settings');
 
-	$count_library = ((oa_loudvoice_is_https_on () ? 'https' : 'http') . '://' . $settings ['api_subdomain'] . '.api.oneall.com/loudvoice/comments/counters.js?discussions_tokens=');
+	$count_library = ((oa_loudvoice_is_https_on () ? 'https' : 'http') . '://' . $settings ['api_subdomain'] . '.api.oneall.com/loudvoice/comments/counters.js');
 
 	// Loudvoice is available
 	if (oa_louddvoice_is_setup ())

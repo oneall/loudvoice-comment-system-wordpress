@@ -12,7 +12,7 @@ function oneall_loudvoice_display_comment( $comment, $args, $depth )
 		case 'trackback' :
 			?>
 		    <li class="post pingback">
-		        <p><?php echo dsq_i('Pingback:'); ?> <?php comment_author_link(); ?>(<?php edit_comment_link(dsq_i('Edit'), ' '); ?>)</p>
+		        <p><?php echo __('Pingback:'); ?> <?php comment_author_link($comment); ?> (<?php edit_comment_link(__('Edit'), '<span class="edit-link">', '</span>'); ?>)</p>
 		    </li>
 		    <?php
 		break;
@@ -108,14 +108,14 @@ $page_reference = oa_loudvoice_get_reference_for_post ($post);
 $page_title     = oa_loudvoice_get_title_for_post ($post);
 $page_url       = oa_loudvoice_get_link_for_post ($post);
 
-$post_token     = oa_loudvoice_get_token_for_postid ($post->ID);
+$discussion_token     = oa_loudvoice_get_token_for_postid ($post->ID);
 
 // Headers
-?>
+?>		
 	<div id="comments" class="comments-area">
 		<h2 class="comments-title">
 			<?php
-				printf( _nx( '<span class="oa-loudvoice-discussion-token" data-discussion_token="'.$post_token.'">One</span> thought on &ldquo;%2$s&rdquo;', '<span class="oa-loudvoice-discussion-token" data-discussion_token="'.$post_token.'">%1$s</span> thoughts on &ldquo;%2$s&rdquo;', get_comments_number(), 'comments title', 'twentyfifteen' ), number_format_i18n( get_comments_number() ), get_the_title() );
+				printf(__ ('Comments on %1$s'), get_the_title());
 			?>
 		</h2>
 		<?php 	
@@ -198,6 +198,7 @@ $post_token     = oa_loudvoice_get_token_for_postid ($post->ID);
 			_oneall.push(['loudvoice', 'set_author_session_token', '<?php echo strval ($author_session_token); ?>']);
 			_oneall.push(['loudvoice', 'set_event', 'on_comment_added', function(data) {oa_loudvoice_import_comment ('<?php echo $post->ID; ?>', data);}]);
 			_oneall.push(['loudvoice', 'do_render_ui', '<?php echo $comments_container_id; ?>']);
+			
 		</script>
 	</div>
 </div>

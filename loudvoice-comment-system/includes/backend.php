@@ -3,25 +3,22 @@
 /**
  * Add span with custom class on comments number counters
  */
-function oa_loudvoice_comments_number($num_comments)
+function oa_loudvoice_comments_number ($output, $number)
 {
     global $post;
+
+	if (! empty ($post->ID) && oa_louddvoice_is_setup())
+	{
+	    if (($discussion_token = oa_loudvoice_get_token_for_postid ($post->ID)) !== false)
+	    {
+	    	$output =  str_replace ($number, '<span class="loudvoice-comments-counter" data-discussion_token="'.esc_attr($discussion_token).'"></span>', $output);
+	    }
+    }
     
-	if (! empty ($post->ID))
-	{    
-	    $post_token = oa_loudvoice_get_token_for_postid ($post->ID);
-	    
-	    if (oa_louddvoice_is_setup ())
-	    {
-	        return '<span class="oa-loudvoice-discussion-token" data-discussion_token="'.esc_attr($post_token).'">'.$num_comments.'</span>';
-	    }
-	    else
-	    {
-	        return $num_comments;
-	    }
-	}
+    // Done
+	return $output;
 }
-add_filter('comments_number', 'oa_loudvoice_comments_number');
+add_filter('comments_number', 'oa_loudvoice_comments_number', 10, 2);
 
 
 /** 
