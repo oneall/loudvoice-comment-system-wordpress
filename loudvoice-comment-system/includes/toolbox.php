@@ -1,481 +1,726 @@
 <?php
 
 /**
- * Removes the author_session when the user logs out
+ * Get date of last export
  */
-function oa_loudvoice_remove_author_session ()
+function oa_louddvoice_last_export_date()
 {
-	// Is Loudvoice running?
-	if (oa_louddvoice_is_setup ())
-	{
-		// Read settings
-		$settings = get_option ('oa_loudvoice_settings');
-	
-		// Read User
-		$user = wp_get_current_user ();
-		
-		// Are author sessions enabled and do we have a valid user?
-		if (empty ($settings ['disable_author_sessions']) && is_object ($user) && !empty ($user->ID))
-		{
-			delete_user_meta ($user->ID, '_oa_loudvoice_author_session_token');
-			delete_user_meta ($user->ID, '_oa_loudvoice_author_session_expiration');
-		}
-	}
+    return get_option('oa_loudvoice_api_last_export');
 }
-add_action ('clear_auth_cookie', 'oa_loudvoice_remove_author_session');
-
 
 /**
- * Creates an author_session when the user logs in
+ * Get date of last import
  */
-function oa_loudvoice_create_author_session ($user_login, $user)
+function oa_louddvoice_last_import_date()
 {
-	// Is Loudvoice running?
-	if (oa_louddvoice_is_setup ())
-	{
-		// Read settings
-		$settings = get_option ('oa_loudvoice_settings');
-		
-		// Are author sessions enabled and do we have a valid user?
-		if (empty ($settings ['disable_author_sessions']) && is_object ($user) && !empty ($user->ID))
-		{	
-			// Read Session Details
-			$author_session_token = get_user_meta ($user->ID, '_oa_loudvoice_author_session_token', true);
-			$author_session_expiration = get_user_meta ($user->ID, '_oa_loudvoice_author_session_expiration', true);
-			
-			// Session not found or expired
-			if (empty ($author_session_token) || empty ($author_session_expiration) || $author_session_expiration > time ())
-			{
-				// API Data
-				$data = array(
-					'method' => 'PUT',
-					'post_data' => json_encode (array(
-						'request' => array(
-							'author_session' => array(
-								'author' => array(
-									'author_reference' => oa_loudvoice_get_author_reference_for_user ($user),
-									'allow_create_author_reference' => true,
-									'name' => $user->user_login,
-									'email' => ( ! empty ($user->user_email) ? $user->user_email : null),
-									'website_url' => ( ! empty ($user->user_url) ? $user->user_url : null),
-									'picture_url' => oa_loudvoice_get_avatar_url ($user->ID, $user->user_email),
-									'ip_address' => oa_loudvoice_get_user_ip ()
-								) 
-							) 
-						) 
-					)) 
-				);
-				
-				// Make Request
-				$result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/authors/sessions.json', $data);
-	
-				// Check result
-				if (is_object ($result) and property_exists ($result, 'http_code') and ($result->http_code == 200 or $result->http_code == 201))
-				{
-					// Decode result
-					$json = @json_decode ($result->http_data);
-					
-					// Read Session Details
-					$author_session_token = $json->response->result->data->author_session->author_session_token;
-					$author_session_expiration = strtotime ($json->response->result->data->author_session->date_expiration);
-					
-					// Save Meta
-					update_user_meta ($user->ID, '_oa_loudvoice_author_session_token', $author_session_token);
-					update_user_meta ($user->ID, '_oa_loudvoice_author_session_expiration', $author_session_expiration);
-				}
-			}
-		}
-	}
-}
-add_action('wp_login', 'oa_loudvoice_create_author_session', 99, 2);
-
-
-
-/**
- * Cleanup of the post/comments meta
- */
-function oa_loudvoice_cleanup_post_comment_meta ($all = false)
-{
-	// Global Vars
-	global $wpdb;
-	
-	// Remove all entries
-	if ($all === true)
-	{
-		// Comment Meta
-		$sql = "DELETE * FROM " . $wpdb->commentmeta . " WHERE meta_key LIKE %s";
-		$wpdb->query ($wpdb->prepare ($sql, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid().'%'));
-
-		// Post Meta
-		$sql = "DELETE * FROM " . $wpdb->postmeta . " WHERE meta_key LIKE %s";
-		$wpdb->query ($wpdb->prepare ($sql, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid().'%'));
-	}
-	// Remove superfluous entries
-	else
-	{
-
-		// Comment Meta
-		$sql = "DELETE cm.* FROM " . $wpdb->commentmeta . " AS cm LEFT JOIN " . $wpdb->comments . " AS c ON (cm.comment_id = c.comment_ID) WHERE cm.meta_key LIKE %s AND c.comment_ID IS NULL";
-		$wpdb->query ($wpdb->prepare ($sql, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid().'%'));
-		
-		// Post Meta
-		$sql = "DELETE pm.* FROM " . $wpdb->postmeta . " AS pm LEFT JOIN " . $wpdb->posts . " AS p ON (pm.post_id = p.ID) WHERE pm.meta_key LIKE %s AND p.ID IS NULL";
-		$wpdb->query ($wpdb->prepare ($sql, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid().'%'));
-	}
+    return get_option('oa_loudvoice_api_last_import');
 }
 
 
 /**
- * Returns the token for a given postid
+ * Returns the avatar for a given userid
  */
-function oa_loudvoice_get_token_for_postid ($postid)
+function oa_loudvoice_get_avatar_url($userid, $email)
 {
-	global $wpdb;
+    $avatar_url = null;
 
-	// The postid is mandatory.
-	$postid = intval ($postid);
-	if (strlen ($postid) > 0)
-	{
-		// Read post_id for this token.
-		$sql = "SELECT pm.meta_value FROM " . $wpdb->postmeta . " AS pm INNER JOIN " . $wpdb->posts . " AS p ON (pm.post_id=p.ID) WHERE pm.post_id=%d AND pm.meta_key = '_oa_loudvoice_synchronized_discussion_".oa_loudvoice_uniqid()."'";
-		$token = $wpdb->get_var ($wpdb->prepare ($sql, $postid));
+    // Read Avatar
+    if (!empty($userid) || !empty($email))
+    {
+        $avatar_from = (empty($userid) ? $email : $userid);
+        $avatar_html = get_avatar($avatar_from);
 
-		// Make sure we have a result
-		if (!empty ($token))
-		{
-			return $token;
-		}
-	}
+        // Extract src
+        if (preg_match("/src\s*=\s*(['\"]{1})(.*?)\\1/i", $avatar_html, $matches))
+        {
+            $avatar_url = trim($matches[2]);
+        }
+    }
 
-	// Error
-	return false;
+    // Error
+    return $avatar_url;
 }
+
+/**
+ * Return an author reference for a user/userid
+ */
+function oa_loudvoice_get_author_reference_for_user($mixed)
+{
+    // Either user or userid can be specified
+    $userid = (is_object($mixed) ? $mixed->ID : $mixed);
+    if (!empty($userid))
+    {
+        return 'WP-' . oa_loudvoice_uniqid() . '-USER-' . intval(trim($userid));
+    }
+
+    // Error
+    return null;
+}
+
+/**
+ * **************************************************************************************************************
+ * * *************************************************** POST ***************************************************
+ * **************************************************************************************************************
+ */
 
 /**
  * Returns the postid for a given token
  */
-function oa_loudvoice_get_postid_for_token ($token)
+function oa_loudvoice_get_postid_for_token($token)
 {
-	global $wpdb;
-	
-	// The token is mandatory.
-	$token = trim (strval ($token));
-	if (strlen ($token) > 0)
-	{
-		// Read post_id for this token.
-		$sql = "SELECT pm.post_id FROM " . $wpdb->postmeta . " AS pm INNER JOIN " . $wpdb->posts . " AS p ON (pm.post_id=p.ID) WHERE pm.meta_key = '_oa_loudvoice_synchronized_discussion_".oa_loudvoice_uniqid()."' AND pm.meta_value=%s";
-		$postid = $wpdb->get_var ($wpdb->prepare ($sql, $token));
-		
-		// Make sure we have a result
-		if (!empty ($postid) && is_numeric ($postid))
-		{
-			return $postid;
-		}
-	}
-	
-	// Error
-	return false;
+    global $wpdb;
+
+    // The token is mandatory.
+    $token = trim(strval($token));
+    if (strlen($token) > 0)
+    {
+        // Read post_id for this token.
+        $sql = "SELECT pm.post_id FROM " . $wpdb->postmeta . " AS pm INNER JOIN " . $wpdb->posts . " AS p ON (pm.post_id=p.ID) WHERE pm.meta_key=%s AND pm.meta_value=%s";
+        $postid = $wpdb->get_var($wpdb->prepare($sql, OA_LOUDVOICE_TOKEN_KEY, $token));
+
+        // Make sure we have a result
+        if (!empty($postid) && is_numeric($postid))
+        {
+            return $postid;
+        }
+    }
+
+    // Error
+    return false;
 }
 
 /**
- * Returns the token for a given commentid
+ * Return the reference of a post/postid
  */
-function oa_loudvoice_get_token_for_commentid ($commentid)
+function oa_loudvoice_get_reference_for_post($mixed)
 {
-	global $wpdb;
+    // Either post or postid can be specified
+    $postid = (is_object($mixed) ? $mixed->ID : $mixed);
+    if (!empty($postid))
+    {
+        return 'WP-' . oa_loudvoice_uniqid() . '-POST-' . intval(trim($postid));
+    }
 
-	// The commentid is mandatory.
-	$commentid = intval ($commentid);
-	if (strlen ($commentid) > 0)
-	{
-		// Read user for this token.
-		$sql = "SELECT cm.meta_value FROM " . $wpdb->commentmeta . " AS cm INNER JOIN " . $wpdb->comments . " AS c ON (cm.comment_id=c.comment_ID) WHERE cm.comment_id=%d AND cm.meta_key = '_oa_loudvoice_synchronized_comments_".oa_loudvoice_uniqid()."'";
-		$token = $wpdb->get_var ($wpdb->prepare ($sql, $commentid));
-
-		// Make sure we have a result
-		if (!empty ($token))
-		{
-			return $token;
-		}
-	}
-
-	// Error
-	return false;
+    // Error
+    return null;
 }
+
+/**
+ * Returns the post tokens to be deleted
+ */
+function oa_loudvoice_get_post_tokens_to_delete()
+{
+    // Read
+    $option = get_option(OA_LOUDVOICE_REMOVE_POSTS_KEY, '');
+
+    // Decode and return
+    return (!empty($option) ? explode(';', $option) : array());
+}
+
+/**
+ * Sets the to delete flag of a post_token
+ */
+function oa_loudvoice_set_to_delete_for_post_token($post_token, $to_delete)
+{
+    // Read
+    $option = get_option(OA_LOUDVOICE_REMOVE_POSTS_KEY, '');
+
+    // Decode
+    $post_tokens = (!empty($option) ? explode(';', $option) : array());
+
+    // Delete this one
+    if ($to_delete == true)
+    {
+        if (!in_array($post_token, $post_tokens))
+        {
+            $post_tokens[] = $post_token;
+        }
+    }
+    // Do not delete this one
+    else
+    {
+        if (($key = array_search($post_token, $post_tokens)) !== false)
+        {
+            unset($post_tokens[$key]);
+        }
+    }
+
+    // Nothing left
+    if (!is_array($post_tokens) || count($post_tokens) == 0)
+    {
+        delete_option(OA_LOUDVOICE_REMOVE_POSTS_KEY);
+    }
+    // Update
+    else
+    {
+        update_option(OA_LOUDVOICE_REMOVE_POSTS_KEY, implode(';', $post_tokens));
+    }
+
+    // Done
+    return $post_tokens;
+}
+
+/**
+ * Return the synchronization force flag of a post/postid
+ */
+function oa_loudvoice_get_force_sync_for_post($mixed)
+{
+    // Post Identifier
+    $postid = (is_object($mixed) ? $mixed->ID : $mixed);
+    if (!empty($postid))
+    {
+        if (get_post_meta($postid, OA_LOUDVOICE_FORCE_SYNC_KEY, true) == 1)
+        {
+            return true;
+        }
+    }
+
+    // Do not force
+    return false;
+}
+
+/**
+ * Sets the synchronization force flag of a post/postid
+ */
+function oa_loudvoice_set_force_sync_for_post($mixed, $do_force_sync)
+{
+    // Post Identifier
+    $postid = (is_object($mixed) ? $mixed->ID : $mixed);
+    if (!empty($postid))
+    {
+        // Remove
+        if ($do_force_sync !== true)
+        {
+            return delete_post_meta($postid, OA_LOUDVOICE_FORCE_SYNC_KEY);
+        }
+        // Update
+        else
+        {
+            return update_post_meta($postid, OA_LOUDVOICE_FORCE_SYNC_KEY, 1);
+        }
+    }
+
+    // Error
+    return false;
+}
+
+/**
+ * Sets the token of a post/postid
+ */
+function oa_loudvoice_set_token_for_post($mixed, $token)
+{
+    // Post Identifier
+    $postid = (is_object($mixed) ? $mixed->ID : $mixed);
+    if (!empty($postid))
+    {
+        if (empty($token))
+        {
+            return delete_post_meta($postid, OA_LOUDVOICE_TOKEN_KEY);
+        }
+        else
+        {
+            return update_post_meta($postid, OA_LOUDVOICE_TOKEN_KEY, $token);
+        }
+    }
+
+    // Error
+    return null;
+}
+
+/**
+ * Returns the token for a post/postid
+ */
+function oa_loudvoice_get_token_for_post($mixed)
+{
+    // Post Identifier
+    $postid = (is_object($mixed) ? $mixed->ID : $mixed);
+    if (!empty($postid))
+    {
+        return get_post_meta($postid, OA_LOUDVOICE_TOKEN_KEY, true);
+    }
+
+    // Error
+    return null;
+}
+
+/**
+ * Set the synhronization time of a post/postid
+ */
+function oa_loudvoice_set_time_sync_for_post($mixed, $time)
+{
+    // Post Identifier
+    $postid = (is_object($mixed) ? $mixed->ID : $mixed);
+    if (!empty($postid))
+    {
+        if (empty($time))
+        {
+            return delete_post_meta($postid, OA_LOUDVOICE_TIME_SYNC_KEY);
+        }
+        else
+        {
+            return update_post_meta($postid, OA_LOUDVOICE_TIME_SYNC_KEY, $time);
+        }
+    }
+
+    // Error
+    return null;
+}
+
+/**
+ * Returns the synchronization time of a post/postid
+ */
+function oa_loudvoice_get_time_sync_for_post($mixed)
+{
+    // Post Identifier
+    $postid = (is_object($mixed) ? $mixed->ID : $mixed);
+    if (!empty($postid))
+    {
+        return get_post_meta($postid, OA_LOUDVOICE_TIME_SYNC_KEY, true);
+    }
+
+    // Error
+    return null;
+}
+
+/**
+ * Return a title of a post
+ */
+function oa_loudvoice_get_title_for_post($post)
+{
+    return strip_tags(get_the_title($post), OA_LOUDVOICE_ALLOWED_HTML_TAGS);
+}
+
+/**
+ * Return the is_closed status of a post/postid
+ */
+function oa_loudvoice_get_is_closed_for_post($mixed)
+{
+    // Post Identifier
+    $postid = (is_object($mixed) ? $mixed->ID : $mixed);
+    if (!empty($postid))
+    {
+        return (comments_open ($postid) ? false : true);
+    }
+
+    // Error
+    return null;
+}
+
+/**
+ * Return the is_trashed status of a post/postid
+ */
+function oa_loudvoice_get_is_trashed_for_post($mixed)
+{
+    // Post Identifier
+    $postid = (is_object($mixed) ? $mixed->ID : $mixed);
+    if (!empty($postid))
+    {
+        return ((strtolower (get_post_status ($postid)) == 'trash') ? true : false);
+    }
+
+    // Error
+    return null;
+}
+
+/**
+ * Return a link for a post/postid
+ */
+function oa_loudvoice_get_link_for_post($mixed)
+{
+    // Post Identifier
+    $postid = (is_object($mixed) ? $mixed->ID : $mixed);
+    if (!empty($postid))
+    {
+        return get_permalink($postid);
+    }
+
+    // Error
+    return null;
+}
+
+
+/**
+ * **************************************************************************************************************
+ * *************************************************** COMMENT **************************************************
+ * **************************************************************************************************************
+ */
 
 /**
  * Returns the commentid for a given token
  */
-function oa_loudvoice_get_commentid_for_token ($token)
+function oa_loudvoice_get_commentid_for_token($token)
 {
-	global $wpdb;
-	
-	// Sanitize token.
-	$token = trim (strval ($token));
-	if (strlen ($token) > 0)
-	{
-		// Read user for this token.
-		$sql = "SELECT cm.comment_id FROM " . $wpdb->commentmeta . " AS cm INNER JOIN " . $wpdb->comments . " AS c ON (cm.comment_id=c.comment_ID) WHERE cm.meta_key = '_oa_loudvoice_synchronized_comments_".oa_loudvoice_uniqid()."' AND cm.meta_value=%s";
-		$commentid = $wpdb->get_var ($wpdb->prepare ($sql, $token));
-		
-		// Make sure we have a result
-		if (!empty ($commentid) && is_numeric ($commentid))
-		{
-			return $commentid;
-		}
-	}
-	
-	// Error
-	return false;
+    global $wpdb;
+
+    // The token is mandatory.
+    $token = trim(strval($token));
+    if (strlen($token) > 0)
+    {
+        // Read user for this token.
+        $sql = "SELECT cm.comment_id FROM " . $wpdb->commentmeta . " AS cm INNER JOIN " . $wpdb->comments . " AS c ON (cm.comment_id=c.comment_ID) WHERE cm.meta_key=%s AND cm.meta_value=%s";
+        $commentid = $wpdb->get_var($wpdb->prepare($sql, OA_LOUDVOICE_TOKEN_KEY, $token));
+
+        // Make sure we have a result
+        if (!empty($commentid) && is_numeric($commentid))
+        {
+            return $commentid;
+        }
+    }
+
+    // Error
+    return false;
 }
 
 /**
- * Returns the LoudVoice status for a given WordPress status
+ * Returns the WordPress status for a given LoudVoice comment
  */
-function oa_loudvoice_get_wordpress_approved_status ($moderation_status, $spam_status, $is_trashed)
+function oa_loudvoice_wrap_status_for_lv_comment ($comment, $status)
 {
-	if ($is_trashed == '1')
-	{
-		return 'trash';
-	}
-	elseif ($spam_status == 'spam')
-	{
-		return 'spam';
-	}
-	elseif ($moderation_status == 'refused')
-	{
-		return 0;
-	}
-	
-	return 1;
+    switch ($status)
+    {
+        case 'comment_approved':
+            if ($comment->is_trashed == 1)
+            {
+                return 'trash';
+            }
+            elseif ($comment->is_spam == 1)
+            {
+                return 'spam';
+            }
+            elseif ($comment->has_been_approved == 1)
+            {
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
+    }
+
+    return null;
 }
 
 /**
- * Returns the LoudVoice spam status for a given WordPress status
+ * Returns the LoudVoice status for a given WordPress comment
  */
-function oa_loudvoice_get_spam_status_for_comment ($comment)
+function oa_loudvoice_wrap_status_for_wp_comment ($comment, $status)
 {
-	// Spam Status
-	switch ($comment->comment_approved)
-	{
-		case 'spam' :
-			return 'spam';
-			
-		default :
-			return 'not-spam';
-	}
+    switch ($status)
+    {
+        case 'is_spam':
+            return ((strtolower ($comment->comment_approved) == 'spam') ? true : false);
+
+        case 'is_trashed':
+            return ((strtolower ($comment->comment_approved) == 'trash') ? true : false);
+
+        case 'has_been_approved':
+            return (($comment->comment_approved == '1') ? true : false);
+
+    }
+
+    return null;
 }
 
 /**
- * Returns the LoudVoice moderation status for a given WordPress status
+ * Return a comment reference for a comment/commentid
  */
-function oa_loudvoice_get_moderation_status_for_comment ($comment) 
+function oa_loudvoice_get_comment_reference_for_comment($mixed)
 {
-	switch ($comment->comment_approved)
-	{
-		case '1' :
-			return 'approved';
-	
-		case '0' :
-			return 'refused';
-		
-		// case 'trash' :
-		// 	return 'deleted';
-			
-		default :
-			return 'unreviewed';
-	}
+    // Either comment or commentid can be specified
+    $commmentid = (is_object($mixed) ? $mixed->comment_ID : $mixed);
+    if ( ! empty ($commmentid))
+    {
+        return 'WP-' . oa_loudvoice_uniqid() . '-COMMENT-' . intval($commmentid);
+    }
+
+    // Error
+    return null;
 }
 
 /**
- * Returns the LoudVoice moderation status for a given WordPress status
+ * Return an author reference for a comment
  */
-function oa_loudvoice_get_is_trashed_status_for_comment ($comment) 
+function oa_loudvoice_get_author_reference_for_comment($comment)
 {
-	switch ($comment->comment_approved)
-	{		
-		case 'trash' :
-			return '1';
-			
-		default :
-			return '0';
-	}
-}
-	
-/**
- * Returns the avatar for a given userid
- */
-function oa_loudvoice_get_avatar_url ($userid, $email)
-{
-	$avatar_url = null;
-	
-	// Read Avatar
-	if (! empty ($userid) || ! empty  ($email))
-	{
-		$avatar_from = (empty ($userid) ? $email : $userid);
-		$avatar_html = get_avatar ($avatar_from);
-	
-		// Extract src
-		if (preg_match ("/src\s*=\s*(['\"]{1})(.*?)\\1/i", $avatar_html, $matches))
-		{
-			$avatar_url = trim ($matches [2]);
-		}
-	}
-	
-	// Error
-	return $avatar_url;
+    // Check if comment is set
+    if (is_object($comment))
+    {
+        // User Identifier
+        if (!empty($comment->user_id))
+        {
+            return oa_loudvoice_get_author_reference_for_user($comment->user_id);
+        }
+
+        // Guest
+        return 'WP-' . oa_loudvoice_uniqid() . '-USER-GUEST-COMMENT-' . intval(trim($comment->comment_ID));
+    }
+
+    // Error
+    return null;
 }
 
 /**
- * Return an identifier for a commentid
+ * Set the token of a comment/commentid
  */
-function oa_loudvoice_get_comment_reference_for_commentid ($commentid)
+function oa_loudvoice_set_token_for_comment($mixed, $token)
 {
-	// We need the identifier
-	if (!empty ($commentid))
-	{
-		return 'WP-'.oa_loudvoice_uniqid().'-COMMENT-' . intval (trim ($commentid));
-	}
-	
-	// Error
-	return null;
+    // Either comment or commentid can be specified
+    $commentid = (is_object($mixed) ? $mixed->comment_ID : $mixed);
+    if (!empty($commentid))
+    {
+        if (is_null($token))
+        {
+            return delete_comment_meta($commentid, OA_LOUDVOICE_TOKEN_KEY);
+        }
+        else
+        {
+            return update_comment_meta($commentid, OA_LOUDVOICE_TOKEN_KEY, $token);
+        }
+    }
+
+    // Error
+    return null;
 }
 
 /**
- * Return an identifier for a comment
+ * Return the token of a comment/commentid
  */
-function oa_loudvoice_get_comment_reference_for_comment ($comment)
+function oa_loudvoice_get_token_for_comment($mixed)
 {
-	// Verify Comment
-	if (is_object ($comment) && !empty ($comment->comment_ID))
-	{
-		return oa_loudvoice_get_comment_reference_for_commentid ($comment->comment_ID);
-	}
-	
-	// Error
-	return null;
+    // Either comment or commentid can be specified
+    $commentid = (is_object($mixed) ? $mixed->comment_ID : $mixed);
+    if (!empty($commentid))
+    {
+        return get_comment_meta($commentid, OA_LOUDVOICE_TOKEN_KEY, true);
+    }
+
+    // Error
+    return null;
 }
 
 /**
- * Return an identifier for a comment
+ * Set the synchronization time of a comment/commentid
  */
-function oa_loudvoice_get_author_reference_for_comment ($comment)
+function oa_loudvoice_set_time_sync_for_comment($mixed, $time)
 {
-	// Check if comment is set
-	if (is_object ($comment))
-	{
-		// User Identifier
-		if (!empty ($comment->user_id))
-		{
-			return oa_loudvoice_get_author_reference_for_user ($comment->user_id);
-		}
-		
-		// Guest
-		return 'WP-'.oa_loudvoice_uniqid().'-USER-GUEST-COMMENT-' . intval (trim ($comment->comment_ID));
-	}
-	
-	// Error
-	return null;
+    // Either comment or commentid can be specified
+    $commentid = (is_object($mixed) ? $mixed->comment_ID : $mixed);
+    if (!empty($commentid))
+    {
+        // Remove
+        if (is_null($time))
+        {
+            return delete_comment_meta($commentid, OA_LOUDVOICE_TIME_SYNC_KEY);
+        }
+        // Update
+        else
+        {
+            return update_comment_meta($commentid, OA_LOUDVOICE_TIME_SYNC_KEY, $time);
+        }
+    }
+
+    // Error
+    return false;
 }
 
 /**
- * Return the reference for a user
+ * Return the synchronization time of a comment/commentid
  */
-function oa_loudvoice_get_author_reference_for_user ($user)
+function oa_loudvoice_get_time_sync_for_comment($mixed)
 {
-	// User Identifier
-	$userid = (is_object ($user) ? $user->ID : $user);
-	
-	// We need the identifier
-	if (!empty ($userid))
-	{
-		return 'WP-'.oa_loudvoice_uniqid().'-USER-' . intval (trim ($userid));
-	}
-	
-	// Error
-	return null;
+    // Either a comment or an identifier can be specified
+    $commentid = (is_object($mixed) ? $mixed->comment_ID : $mixed);
+    if (!empty($commentid))
+    {
+        return get_comment_meta($commentid, OA_LOUDVOICE_TIME_SYNC_KEY, true);
+    }
+
+    // Error
+    return null;
 }
 
 /**
- * Return the reference of a post
+ * Return the synchronization force flag of a comment/commentid
  */
-function oa_loudvoice_get_reference_for_post ($post)
+function oa_loudvoice_get_force_sync_for_comment($mixed)
 {
-	// Post Identifier
-	$postid = (is_object ($post) ? $post->ID : $post);
-	
-	// We need the identifier
-	if (!empty ($postid))
-	{
-		return 'WP-'.oa_loudvoice_uniqid().'-POST-' . intval (trim ($postid));
-	}
-	
-	// Error
-	return null;
+    // Either a comment or an identifier can be specified
+    $commentid = (is_object($mixed) ? $mixed->comment_ID : $mixed);
+    if (!empty($commentid))
+    {
+        // Check if it needs to be synchronized
+        if (get_comment_meta($commentid, OA_LOUDVOICE_FORCE_SYNC_KEY, true) == 1)
+        {
+            return true;
+        }
+    }
+
+    // Do not force
+    return false;
 }
 
 /**
- * Return a title for a post
+ * Sets the synchronization force flag of a comment/commentid
  */
-function oa_loudvoice_get_title_for_post ($postid)
+function oa_loudvoice_set_force_sync_for_comment($mixed, $do_force_sync)
 {
-	return strip_tags (get_the_title ($postid), OA_LOUDVOICE_ALLOWED_HTML_TAGS);
+    // Either a comment or an identifier can be specified
+    $commentid = (is_object($mixed) ? $mixed->comment_ID : $mixed);
+    if (!empty($commentid))
+    {
+        // Remove
+        if ($do_force_sync !== true)
+        {
+            return delete_comment_meta($commentid, OA_LOUDVOICE_FORCE_SYNC_KEY);
+        }
+        // Update
+        else
+        {
+            return update_comment_meta($commentid, OA_LOUDVOICE_FORCE_SYNC_KEY, 1);
+        }
+    }
+
+    // Error
+    return false;
 }
 
 /**
- * Return a link for a post
+ * Returns the comment tokens to be deleted
  */
-function oa_loudvoice_get_link_for_post ($postid)
+function oa_loudvoice_get_comment_tokens_to_delete()
 {
-	return get_permalink ($postid);
+    // Read tokens to delete
+    $option = get_option(OA_LOUDVOICE_REMOVE_COMMENTS_KEY, '');
+
+    // Decode and return
+    return (!empty($option) ? explode(';', $option) : array());
+}
+
+/**
+ * Sets the to delete flag of a comment_token
+ */
+function oa_loudvoice_set_to_delete_for_comment_token($comment_token, $to_delete)
+{
+    // Read tokens to delete
+    $option = get_option(OA_LOUDVOICE_REMOVE_COMMENTS_KEY, '');
+
+    // Decode
+    $comment_tokens = (!empty($option) ? explode(';', $option) : array());
+
+    // Delete this one
+    if ($to_delete == true)
+    {
+        if (!in_array($comment_token, $comment_tokens))
+        {
+            $comment_tokens[] = $comment_token;
+        }
+    }
+    // Do not delete this one
+    else
+    {
+        if (($key = array_search($comment_token, $comment_tokens)) !== false)
+        {
+            unset($comment_tokens[$key]);
+        }
+    }
+
+    // Nothing left
+    if (!is_array($comment_tokens) || count($comment_tokens) == 0)
+    {
+        delete_option(OA_LOUDVOICE_REMOVE_COMMENTS_KEY);
+    }
+    // Update
+    else
+    {
+        update_option(OA_LOUDVOICE_REMOVE_COMMENTS_KEY, implode(';', $comment_tokens));
+    }
+
+    // Done
+    return $comment_tokens;
+}
+
+
+/**
+ * Return the commentid for a given reference (eg. WP-ZJONY-COMMENT-1)
+ */
+function oa_loudvoice_get_commentid_for_reference($reference)
+{
+    if (preg_match('/COMMENT-([0-9]+)$/i', $reference, $matches))
+    {
+        return $matches[1];
+    }
+
+    // Error
+    return null;
+}
+
+/**
+ * Return the userid for a given reference (eg. WP-ZJONY-USER-1)
+ */
+function oa_loudvoice_get_userid_for_reference($reference)
+{
+    if (preg_match('/USER-([0-9]+)$/i', $reference, $matches))
+    {
+        return $matches[1];
+    }
+
+    // Error
+    return null;
 }
 
 /**
  * Tests if required options are configured to display Loudvoice
  */
-function oa_louddvoice_is_setup ()
+function oa_louddvoice_is_setup()
 {
-	// Read settings
-	$settings = get_option ('oa_loudvoice_settings');
-	
-	// Check if API credentials have been entered
-	if (is_array ($settings) && !empty ($settings ['api_subdomain']) && !empty ($settings ['api_key']) && !empty ($settings ['api_secret']))
-	{
-		return true;
-	}
-	
-	// Setup incomplete
-	return false;
+    // Read settings
+    $settings = get_option('oa_loudvoice_settings');
+
+    // Check if API credentials have been entered
+    if (is_array($settings) && !empty($settings['api_subdomain']) && !empty($settings['api_key']) && !empty($settings['api_secret']))
+    {
+        return true;
+    }
+
+    // Setup incomplete
+    return false;
+}
+
+/**
+ * Returns the realm of this LoudVoice installation
+ */
+function oa_loudvoice_get_realm()
+{
+    return 'WP-' . oa_loudvoice_uniqid();
 }
 
 /**
  * Returns the unique identifier of this LoudVoice installation
  */
-function oa_loudvoice_uniqid ()
+function oa_loudvoice_uniqid()
 {
-	// Read settings
-	$settings = get_option ('oa_loudvoice_settings');
-	
-	// Check if unique identifier exits
-	if (is_array ($settings) && !empty ($settings ['oa_loudvoice_uniqid']))
-	{
-		// Done
-		return $settings ['oa_loudvoice_uniqid'];
-	}
-	// Create Identifier
-	else
-	{
-		// Generate one identifier
-		$settings['oa_loudvoice_uniqid'] = oa_loudvoice_generate_uniqid();
+    // Read settings
+    $settings = get_option('oa_loudvoice_settings');
 
-		//Update entire array
-		update_option('oa_loudvoice_settings', $settings);
+    // Check if unique identifier exits
+    if (is_array($settings) && !empty($settings['oa_loudvoice_uniqid']))
+    {
+        // Done
+        return $settings['oa_loudvoice_uniqid'];
+    }
+    // Create Identifier
+    else
+    {
+        // Generate one identifier
+        $settings['oa_loudvoice_uniqid'] = oa_loudvoice_generate_uniqid();
 
-		// Done
-		return $settings['oa_loudvoice_uniqid'];
-	}
+        // Update entire array
+        update_option('oa_loudvoice_settings', $settings);
+
+        // Done
+        return $settings['oa_loudvoice_uniqid'];
+    }
 }
-
 
 /**
  * Generates a unique id
@@ -485,7 +730,7 @@ function oa_loudvoice_generate_uniqid($length = 5)
     $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     $charactersLength = strlen($characters);
     $randomString = '';
-    
+
     for ($i = 0; $i < $length; $i++)
     {
         $randomString .= $characters[rand(0, $charactersLength - 1)];
@@ -494,149 +739,157 @@ function oa_loudvoice_generate_uniqid($length = 5)
 }
 
 /**
- * Test if the current connection is being made over http or https
+ * Tests if the current connection is being made over http or https
  */
-function oa_loudvoice_is_https_on ()
+function oa_loudvoice_is_https_on()
 {
-	if (!empty ($_SERVER ['SERVER_PORT']))
-	{
-		if (trim ($_SERVER ['SERVER_PORT']) == '443')
-		{
-			return true;
-		}
-	}
-	
-	if (!empty ($_SERVER ['HTTP_X_FORWARDED_PROTO']))
-	{
-		if (strtolower (trim ($_SERVER ['HTTP_X_FORWARDED_PROTO'])) == 'https')
-		{
-			return true;
-		}
-	}
-	
-	if (!empty ($_SERVER ['HTTPS']))
-	{
-		if (strtolower (trim ($_SERVER ['HTTPS'])) == 'on' or trim ($_SERVER ['HTTPS']) == '1')
-		{
-			return true;
-		}
-	}
-	
-	return false;
+    if (!empty($_SERVER['SERVER_PORT']))
+    {
+        if (trim($_SERVER['SERVER_PORT']) == '443')
+        {
+            return true;
+        }
+    }
+
+    if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']))
+    {
+        if (strtolower(trim($_SERVER['HTTP_X_FORWARDED_PROTO'])) == 'https')
+        {
+            return true;
+        }
+    }
+
+    if (!empty($_SERVER['HTTPS']))
+    {
+        if (strtolower(trim($_SERVER['HTTPS'])) == 'on' or trim($_SERVER['HTTPS']) == '1')
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /**
  * Returns the user's ip address
  */
-function oa_loudvoice_get_user_ip ()
+function oa_loudvoice_get_user_ip()
 {
-	if (isset ($_SERVER) && is_array ($_SERVER))
-	{
-		if (!empty ($_SERVER ['REMOTE_ADDR']))
-		{
-			$REMOTE_ADDR = $_SERVER ['REMOTE_ADDR'];
-		}
-		
-		if (!empty ($_SERVER ['X_FORWARDED_FOR']))
-		{
-			$X_FORWARDED_FOR = explode (',', $_SERVER ['X_FORWARDED_FOR']);
-			
-			if (is_array ($X_FORWARDED_FOR) and count ($X_FORWARDED_FOR) > 0)
-			{
-				$REMOTE_ADDR = trim ($X_FORWARDED_FOR [0]);
-			}
-		}
-		elseif (!empty ($_SERVER ['HTTP_X_FORWARDED_FOR']))
-		{
-			$HTTP_X_FORWARDED_FOR = explode (',', $_SERVER ['HTTP_X_FORWARDED_FOR']);
-			
-			if (!empty ($HTTP_X_FORWARDED_FOR))
-			{
-				$REMOTE_ADDR = trim ($HTTP_X_FORWARDED_FOR [0]);
-			}
-		}
-		if (!empty ($REMOTE_ADDR))
-		{
-			return preg_replace ('/[^0-9a-f:\., ]/si', '', $REMOTE_ADDR);
-		}
-	}
-	
-	// Error
-	return null;
+    if (isset($_SERVER) && is_array($_SERVER))
+    {
+        if (!empty($_SERVER['REMOTE_ADDR']))
+        {
+            $REMOTE_ADDR = $_SERVER['REMOTE_ADDR'];
+        }
+
+        if (!empty($_SERVER['X_FORWARDED_FOR']))
+        {
+            $X_FORWARDED_FOR = explode(',', $_SERVER['X_FORWARDED_FOR']);
+
+            if (is_array($X_FORWARDED_FOR) and count($X_FORWARDED_FOR) > 0)
+            {
+                $REMOTE_ADDR = trim($X_FORWARDED_FOR[0]);
+            }
+        }
+        elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR']))
+        {
+            $HTTP_X_FORWARDED_FOR = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+
+            if (!empty($HTTP_X_FORWARDED_FOR))
+            {
+                $REMOTE_ADDR = trim($HTTP_X_FORWARDED_FOR[0]);
+            }
+        }
+        if (!empty($REMOTE_ADDR))
+        {
+            return preg_replace('/[^0-9a-f:\., ]/si', '', $REMOTE_ADDR);
+        }
+    }
+
+    // Error
+    return null;
 }
 
 /**
- * Return the list of disabled functions.
+ * Returns the list of disabled PHP functions.
  */
-function oa_loudvoice_get_disabled_functions ()
+function oa_loudvoice_get_disabled_functions()
 {
-	$disabled_functions = trim (ini_get ('disable_functions'));
-	if (strlen ($disabled_functions) == 0)
-	{
-		$disabled_functions = array();
-	}
-	else
-	{
-		$disabled_functions = explode (',', $disabled_functions);
-		$disabled_functions = array_map ('trim', $disabled_functions);
-	}
-	return $disabled_functions;
-}
-
-// Check if a given v4 UUID is valid
-function oa_loudvoice_is_valid_uuid ($uuid)
-{
-	return preg_match ('/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i', trim ($uuid));
+    $disabled_functions = trim(ini_get('disable_functions'));
+    if (strlen($disabled_functions) == 0)
+    {
+        $disabled_functions = array();
+    }
+    else
+    {
+        $disabled_functions = explode(',', $disabled_functions);
+        $disabled_functions = array_map('trim', $disabled_functions);
+    }
+    return $disabled_functions;
 }
 
 /**
- * Send an API request by using the given handler
+ * Checks if a given v4 UUID is valid.
  */
-function oa_loudvoice_do_api_request_endpoint ($endpoint, $api_opts = array())
+function oa_loudvoice_is_valid_uuid($uuid)
 {
-	// Read settings
-	$settings = get_option ('oa_loudvoice_settings');
-	
-	// Options
-	$api_opts ['api_key'] = (!empty ($settings ['api_key']) ? $settings ['api_key'] : '');
-	$api_opts ['api_secret'] = (!empty ($settings ['api_secret']) ? $settings ['api_secret'] : '');
-	
-	// API Settings
-	$api_connection_handler = ((!empty ($settings ['api_connection_handler']) and $settings ['api_connection_handler'] == 'fsockopen') ? 'fsockopen' : 'curl');
-	$api_connection_use_https = ((!isset ($settings ['api_connection_use_https']) or $settings ['api_connection_use_https'] == '1') ? true : false);
-	$api_subdomain = trim ($settings ['api_subdomain']);
-	
-	// Endpoint
-	$api_resource_url = ($api_connection_use_https ? 'https' : 'http') . '://' . $api_subdomain . '.api.oneall.com/' . ltrim (trim ($endpoint), '/ ');
-	
-	// Do request
-	return oa_loudvoice_do_api_request ($api_connection_handler, $api_resource_url, $api_opts);
+    return preg_match('/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i', trim($uuid));
 }
 
 /**
- * Send an API request by using the given handler
+ * **************************************************************************************************************
+ * **************************************************** API *****************************************************
+ * **************************************************************************************************************
  */
-function oa_loudvoice_do_api_request ($handler, $url, $opts = array (), $timeout = 25)
+
+/**
+ * Send an API request to the given endpoint
+ */
+function oa_loudvoice_do_api_request_endpoint($endpoint, $api_opts = array())
 {
-	// Proxy Settings
-	if (defined ('WP_PROXY_HOST') && defined ('WP_PROXY_PORT'))
-	{
-		$opts ['proxy_url'] = (defined ('WP_PROXY_HOST') ? WP_PROXY_HOST : '');
-		$opts ['proxy_port'] = (defined ('WP_PROXY_PORT') ? WP_PROXY_PORT : '');
-		$opts ['proxy_username'] = (defined ('WP_PROXY_USERNAME') ? WP_PROXY_USERNAME : '');
-		$opts ['proxy_password'] = (defined ('WP_PROXY_PASSWORD') ? WP_PROXY_PASSWORD : '');
-	}
-	
-	// FSOCKOPEN
-	if ($handler == 'fsockopen')
-	{
-		return oa_loudvoice_fsockopen_request ($url, $opts, $timeout);
-	}
-	// CURL
-	else
-	{
-		return oa_loudvoice_curl_request ($url, $opts, $timeout);
-	}
+    // Read settings
+    $settings = get_option('oa_loudvoice_settings');
+
+    // Options
+    $api_opts['api_key'] = (!empty($settings['api_key']) ? $settings['api_key'] : '');
+    $api_opts['api_secret'] = (!empty($settings['api_secret']) ? $settings['api_secret'] : '');
+
+    // API Settings
+    $api_connection_handler = ((!empty($settings['api_connection_handler']) and $settings['api_connection_handler'] == 'fsockopen') ? 'fsockopen' : 'curl');
+    $api_connection_use_https = ((!isset($settings['api_connection_use_https']) or $settings['api_connection_use_https'] == '1') ? true : false);
+    $api_subdomain = trim($settings['api_subdomain']);
+
+    // Endpoint
+    $api_resource_url = ($api_connection_use_https ? 'https' : 'http') . '://' . $api_subdomain . OA_LOUDVOICE_API_BASE . '/' . ltrim(trim($endpoint), '/ ');
+
+    // Do request
+    return oa_loudvoice_do_api_request($api_connection_handler, $api_resource_url, $api_opts);
+}
+
+/**
+ * Sends an API request using the given handler
+ */
+function oa_loudvoice_do_api_request($handler, $url, $opts = array (), $timeout = 25)
+{
+    // Proxy Settings
+    if (defined('WP_PROXY_HOST') && defined('WP_PROXY_PORT'))
+    {
+        $opts['proxy_url'] = (defined('WP_PROXY_HOST') ? WP_PROXY_HOST : '');
+        $opts['proxy_port'] = (defined('WP_PROXY_PORT') ? WP_PROXY_PORT : '');
+        $opts['proxy_username'] = (defined('WP_PROXY_USERNAME') ? WP_PROXY_USERNAME : '');
+        $opts['proxy_password'] = (defined('WP_PROXY_PASSWORD') ? WP_PROXY_PASSWORD : '');
+    }
+
+    // FSOCKOPEN
+    if ($handler == 'fsockopen')
+    {
+        return oa_loudvoice_fsockopen_request($url, $opts, $timeout);
+    }
+    // CURL
+    else
+    {
+        return oa_loudvoice_curl_request($url, $opts, $timeout);
+    }
 }
 
 /**
@@ -648,157 +901,157 @@ function oa_loudvoice_do_api_request ($handler, $url, $opts = array (), $timeout
 /**
  * Check if fsockopen is available.
  */
-function oa_loudvoice_check_fsockopen_available ()
+function oa_loudvoice_check_fsockopen_available()
 {
-	// Make sure fsockopen has been loaded
-	if (function_exists ('fsockopen') and function_exists ('fwrite'))
-	{
-		$disabled_functions = oa_loudvoice_get_disabled_functions ();
-		
-		// Make sure fsockopen has not been disabled
-		if (!in_array ('fsockopen', $disabled_functions) and !in_array ('fwrite', $disabled_functions))
-		{
-			// Loaded and enabled
-			return true;
-		}
-	}
-	
-	// Not loaded or disabled
-	return false;
+    // Make sure fsockopen has been loaded
+    if (function_exists('fsockopen') and function_exists('fwrite'))
+    {
+        $disabled_functions = oa_loudvoice_get_disabled_functions();
+
+        // Make sure fsockopen has not been disabled
+        if (!in_array('fsockopen', $disabled_functions) and !in_array('fwrite', $disabled_functions))
+        {
+            // Loaded and enabled
+            return true;
+        }
+    }
+
+    // Not loaded or disabled
+    return false;
 }
 
 /**
  * Check if fsockopen is enabled and can be used to connect to OneAll.
  */
-function oa_loudvoice_check_fsockopen ($secure = true)
+function oa_loudvoice_check_fsockopen($secure = true)
 {
-	if (oa_loudvoice_check_fsockopen_available ())
-	{
-		$result = oa_loudvoice_do_api_request ('fsockopen', ($secure ? 'https' : 'http') . '://www.oneall.com/ping.html');
-		if (is_object ($result) and property_exists ($result, 'http_code') and $result->http_code == 200)
-		{
-			if (property_exists ($result, 'http_data'))
-			{
-				if (strtolower ($result->http_data) == 'ok')
-				{
-					return true;
-				}
-			}
-		}
-	}
-	return false;
+    if (oa_loudvoice_check_fsockopen_available())
+    {
+        $result = oa_loudvoice_do_api_request('fsockopen', ($secure ? 'https' : 'http') . '://www.oneall.com/ping.html');
+        if (is_object($result) and property_exists($result, 'http_code') and $result->http_code == 200)
+        {
+            if (property_exists($result, 'http_data'))
+            {
+                if (strtolower($result->http_data) == 'ok')
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 /**
  * Send an fsockopen request.
  */
-function oa_loudvoice_fsockopen_request ($url, $options = array (), $timeout = 15)
+function oa_loudvoice_fsockopen_request($url, $options = array (), $timeout = 15)
 {
-	// Store the result
-	$result = new stdClass ();
-	
-	// Make sure that this is a valid URL
-	if (($uri = parse_url ($url)) === false)
-	{
-		$result->http_error = 'invalid_uri';
-		return $result;
-	}
-	
-	// Check the scheme
-	if ($uri ['scheme'] == 'https')
-	{
-		$port = (isset ($uri ['port']) ? $uri ['port'] : 443);
-		$url = ($uri ['host'] . ($port != 443 ? ':' . $port : ''));
-		$url_protocol = 'https://';
-		$url_prefix = 'ssl://';
-	}
-	else
-	{
-		$port = (isset ($uri ['port']) ? $uri ['port'] : 80);
-		$url = ($uri ['host'] . ($port != 80 ? ':' . $port : ''));
-		$url_protocol = 'http://';
-		$url_prefix = '';
-	}
-	
-	// Construct the path to act on
-	$path = (isset ($uri ['path']) ? $uri ['path'] : '/') . (!empty ($uri ['query']) ? ('?' . $uri ['query']) : '');
-	
-	// HTTP Headers
-	$headers = array();
-	
-	// We are using a proxy
-	if (!empty ($options ['proxy_url']) && !empty ($options ['proxy_port']))
-	{
-		// Open Socket
-		$fp = @fsockopen ($options ['proxy_url'], $options ['proxy_port'], $errno, $errstr, $timeout);
-		
-		// Make sure that the socket has been opened properly
-		if (!$fp)
-		{
-			$result->http_error = trim ($errstr);
-			return $result;
-		}
-		
-		// HTTP Headers
-		$headers [] = "GET " . $url_protocol . $url . $path . " HTTP/1.0";
-		$headers [] = "Host: " . $url . ":" . $port;
-		
-		// Proxy Authentication
-		if (!empty ($options ['proxy_username']) && !empty ($options ['proxy_password']))
-		{
-			$headers [] = 'Proxy-Authorization: Basic ' . base64_encode ($options ['proxy_username'] . ":" . $options ['proxy_password']);
-		}
-	}
-	// We are not using a proxy
-	else
-	{
-		// Open Socket
-		$fp = @fsockopen ($url_prefix . $url, $port, $errno, $errstr, $timeout);
-		
-		// Make sure that the socket has been opened properly
-		if (!$fp)
-		{
-			$result->http_error = trim ($errstr);
-			return $result;
-		}
-		
-		// HTTP Headers
-		$headers [] = "GET " . $path . " HTTP/1.0";
-		$headers [] = "Host: " . $url;
-	}
-	
-	// Enable basic authentication
-	if (isset ($options ['api_key']) and isset ($options ['api_secret']))
-	{
-		$headers [] = 'Authorization: Basic ' . base64_encode ($options ['api_key'] . ":" . $options ['api_secret']);
-	}
-	
-	// Build and send request
-	fwrite ($fp, (implode ("\r\n", $headers) . "\r\n\r\n"));
-	
-	// Fetch response
-	$response = '';
-	while ( !feof ($fp) )
-	{
-		$response .= fread ($fp, 1024);
-	}
-	
-	// Close connection
-	fclose ($fp);
-	
-	// Parse response
-	list ($response_header, $response_body) = explode ("\r\n\r\n", $response, 2);
-	
-	// Parse header
-	$response_header = preg_split ("/\r\n|\n|\r/", $response_header);
-	list ($header_protocol, $header_code, $header_status_message) = explode (' ', trim (array_shift ($response_header)), 3);
-	
-	// Build result
-	$result->http_code = $header_code;
-	$result->http_data = $response_body;
-	
-	// Done
-	return $result;
+    // Store the result
+    $result = new stdClass();
+
+    // Make sure that this is a valid URL
+    if (($uri = parse_url($url)) === false)
+    {
+        $result->http_error = 'invalid_uri';
+        return $result;
+    }
+
+    // Check the scheme
+    if ($uri['scheme'] == 'https')
+    {
+        $port = (isset($uri['port']) ? $uri['port'] : 443);
+        $url = ($uri['host'] . ($port != 443 ? ':' . $port : ''));
+        $url_protocol = 'https://';
+        $url_prefix = 'ssl://';
+    }
+    else
+    {
+        $port = (isset($uri['port']) ? $uri['port'] : 80);
+        $url = ($uri['host'] . ($port != 80 ? ':' . $port : ''));
+        $url_protocol = 'http://';
+        $url_prefix = '';
+    }
+
+    // Construct the path to act on
+    $path = (isset($uri['path']) ? $uri['path'] : '/') . (!empty($uri['query']) ? ('?' . $uri['query']) : '');
+
+    // HTTP Headers
+    $headers = array();
+
+    // We are using a proxy
+    if (!empty($options['proxy_url']) && !empty($options['proxy_port']))
+    {
+        // Open Socket
+        $fp = @fsockopen($options['proxy_url'], $options['proxy_port'], $errno, $errstr, $timeout);
+
+        // Make sure that the socket has been opened properly
+        if (!$fp)
+        {
+            $result->http_error = trim($errstr);
+            return $result;
+        }
+
+        // HTTP Headers
+        $headers[] = "GET " . $url_protocol . $url . $path . " HTTP/1.0";
+        $headers[] = "Host: " . $url . ":" . $port;
+
+        // Proxy Authentication
+        if (!empty($options['proxy_username']) && !empty($options['proxy_password']))
+        {
+            $headers[] = 'Proxy-Authorization: Basic ' . base64_encode($options['proxy_username'] . ":" . $options['proxy_password']);
+        }
+    }
+    // We are not using a proxy
+    else
+    {
+        // Open Socket
+        $fp = @fsockopen($url_prefix . $url, $port, $errno, $errstr, $timeout);
+
+        // Make sure that the socket has been opened properly
+        if (!$fp)
+        {
+            $result->http_error = trim($errstr);
+            return $result;
+        }
+
+        // HTTP Headers
+        $headers[] = "GET " . $path . " HTTP/1.0";
+        $headers[] = "Host: " . $url;
+    }
+
+    // Enable basic authentication
+    if (isset($options['api_key']) and isset($options['api_secret']))
+    {
+        $headers[] = 'Authorization: Basic ' . base64_encode($options['api_key'] . ":" . $options['api_secret']);
+    }
+
+    // Build and send request
+    fwrite($fp, (implode("\r\n", $headers) . "\r\n\r\n"));
+
+    // Fetch response
+    $response = '';
+    while (!feof($fp))
+    {
+        $response .= fread($fp, 1024);
+    }
+
+    // Close connection
+    fclose($fp);
+
+    // Parse response
+    list ($response_header, $response_body) = explode("\r\n\r\n", $response, 2);
+
+    // Parse header
+    $response_header = preg_split("/\r\n|\n|\r/", $response_header);
+    list ($header_protocol, $header_code, $header_status_message) = explode(' ', trim(array_shift($response_header)), 3);
+
+    // Build result
+    $result->http_code = $header_code;
+    $result->http_data = $response_body;
+
+    // Done
+    return $result;
 }
 
 /**
@@ -810,116 +1063,117 @@ function oa_loudvoice_fsockopen_request ($url, $options = array (), $timeout = 1
 /**
  * Check if cURL has been loaded and is enabled.
  */
-function oa_loudvoice_check_curl_available ()
+function oa_loudvoice_check_curl_available()
 {
-	// Make sure cURL has been loaded
-	if (in_array ('curl', get_loaded_extensions ()) and function_exists ('curl_init') and function_exists ('curl_exec'))
-	{
-		$disabled_functions = oa_loudvoice_get_disabled_functions ();
-		
-		// Make sure cURL not been disabled
-		if (!in_array ('curl_init', $disabled_functions) and !in_array ('curl_exec', $disabled_functions))
-		{
-			// Loaded and enabled
-			return true;
-		}
-	}
-	
-	// Not loaded or disabled
-	return false;
+    // Make sure cURL has been loaded
+    if (in_array('curl', get_loaded_extensions()) and function_exists('curl_init') and function_exists('curl_exec'))
+    {
+        $disabled_functions = oa_loudvoice_get_disabled_functions();
+
+        // Make sure cURL not been disabled
+        if (!in_array('curl_init', $disabled_functions) and !in_array('curl_exec', $disabled_functions))
+        {
+            // Loaded and enabled
+            return true;
+        }
+    }
+
+    // Not loaded or disabled
+    return false;
 }
 
 /**
  * Check if CURL is available and can be used to connect to OneAll
  */
-function oa_loudvoice_check_curl ($secure = true)
+function oa_loudvoice_check_curl($secure = true)
 {
-	if (oa_loudvoice_check_curl_available ())
-	{
-		$result = oa_loudvoice_do_api_request ('curl', ($secure ? 'https' : 'http') . '://www.oneall.com/ping.html');
-		if (is_object ($result) and property_exists ($result, 'http_code') and $result->http_code == 200)
-		{
-			if (property_exists ($result, 'http_data'))
-			{
-				if (strtolower ($result->http_data) == 'ok')
-				{
-					return true;
-				}
-			}
-		}
-	}
-	return false;
+    if (oa_loudvoice_check_curl_available())
+    {
+        $result = oa_loudvoice_do_api_request('curl', ($secure ? 'https' : 'http') . '://www.oneall.com/ping.html');
+        if (is_object($result) and property_exists($result, 'http_code') and $result->http_code == 200)
+        {
+            if (property_exists($result, 'http_data'))
+            {
+                if (strtolower($result->http_data) == 'ok')
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 /**
  * Send a CURL request.
  */
-function oa_loudvoice_curl_request ($url, $options = array (), $timeout = 15)
+function oa_loudvoice_curl_request($url, $options = array (), $timeout = 15)
 {
-	// Store the result
-	$result = new stdClass ();
-	
-	// Send request
-	$curl = curl_init ();
-	curl_setopt ($curl, CURLOPT_URL, $url);
-	curl_setopt ($curl, CURLOPT_HEADER, 0);
-	curl_setopt ($curl, CURLOPT_TIMEOUT, $timeout);
-	curl_setopt ($curl, CURLOPT_VERBOSE, 0);
-	curl_setopt ($curl, CURLOPT_RETURNTRANSFER, 1);
-	curl_setopt ($curl, CURLOPT_SSL_VERIFYPEER, 0);
-	curl_setopt ($curl, CURLOPT_SSL_VERIFYHOST, 0);
-	curl_setopt ($curl, CURLOPT_USERAGENT, 'Loudvoice ' . OA_LOUDVOICE_VERSION . 'WP (+http://www.oneall.com/)');
-	
-	// BASIC AUTH?
-	if (isset ($options ['api_key']) and isset ($options ['api_secret']))
-	{
-		curl_setopt ($curl, CURLOPT_USERPWD, $options ['api_key'] . ":" . $options ['api_secret']);
-	}
-	
-	// Proxy Settings
-	if (!empty ($options ['proxy_url']) && !empty ($options ['proxy_port']))
-	{
-		// Proxy Location
-		curl_setopt ($curl, CURLOPT_PROXYTYPE, CURLPROXY_HTTP);
-		curl_setopt ($curl, CURLOPT_PROXY, $options ['proxy_url']);
-		
-		// Proxy Port
-		curl_setopt ($curl, CURLOPT_PROXYPORT, $options ['proxy_port']);
-		
-		// Proxy Authentication
-		if (!empty ($options ['proxy_username']) && !empty ($options ['proxy_password']))
-		{
-			curl_setopt ($curl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
-			curl_setopt ($curl, CURLOPT_PROXYUSERPWD, $options ['proxy_username'] . ':' . $options ['proxy_password']);
-		}
-	}
-	
-	// Custom Request
-	if (!empty ($options ['method']))
-	{
-		curl_setopt ($curl, CURLOPT_CUSTOMREQUEST, strtoupper ($options ['method']));
-	}
-	
-	// Post Data
-	if (!empty ($options ['post_data']))
-	{
-		curl_setopt ($curl, CURLOPT_POSTFIELDS, $options ['post_data']);
-	}
-	
-	// Make request
-	if (($http_data = curl_exec ($curl)) !== false)
-	{
-		$result->http_code = curl_getinfo ($curl, CURLINFO_HTTP_CODE);
-		$result->http_data = $http_data;
-		$result->http_error = null;
-	}
-	else
-	{
-		$result->http_code = -1;
-		$result->http_data = null;
-		$result->http_error = curl_error ($curl);
-	}
-	
-	// Done
-	return $result;
+    // Store the result
+    $result = new stdClass();
+
+    // Send request
+    $curl = curl_init();
+    curl_setopt($curl, CURLOPT_URL, $url);
+    curl_setopt($curl, CURLOPT_HEADER, 0);
+    curl_setopt($curl, CURLOPT_TIMEOUT, $timeout);
+    curl_setopt($curl, CURLOPT_VERBOSE, 0);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+    curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
+    curl_setopt($curl, CURLOPT_USERAGENT, OA_LOUDVOICE_AGENT);
+
+    // BASIC AUTH?
+    if (isset($options['api_key']) and isset($options['api_secret']))
+    {
+        curl_setopt($curl, CURLOPT_USERPWD, $options['api_key'] . ":" . $options['api_secret']);
+    }
+
+    // Proxy Settings
+    if (!empty($options['proxy_url']) && !empty($options['proxy_port']))
+    {
+        // Proxy Location
+        curl_setopt($curl, CURLOPT_PROXYTYPE, CURLPROXY_HTTP);
+        curl_setopt($curl, CURLOPT_PROXY, $options['proxy_url']);
+
+        // Proxy Port
+        curl_setopt($curl, CURLOPT_PROXYPORT, $options['proxy_port']);
+
+        // Proxy Authentication
+        if (!empty($options['proxy_username']) && !empty($options['proxy_password']))
+        {
+            curl_setopt($curl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
+            curl_setopt($curl, CURLOPT_PROXYUSERPWD, $options['proxy_username'] . ':' . $options['proxy_password']);
+        }
+    }
+
+    // Custom Request
+    if (!empty($options['method']))
+    {
+        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, strtoupper($options['method']));
+    }
+
+    // Post Data
+    if (!empty($options['post_data']))
+    {
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $options['post_data']);
+    }
+
+    // Make request
+    if (($http_data = curl_exec($curl)) !== false)
+    {
+        $result->http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $result->http_data = $http_data;
+        $result->http_error = null;
+    }
+    else
+    {
+        $result->http_code = -1;
+        $result->http_data = null;
+        $result->http_error = curl_error($curl);
+    }
+
+    // Done
+    return $result;
 }
+

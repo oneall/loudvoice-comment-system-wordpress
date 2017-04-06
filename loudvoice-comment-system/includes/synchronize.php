@@ -1,777 +1,917 @@
 <?php
 
+// Export (Admin)
+add_action('wp_ajax_oa_loudvoice_export_posts', 'oa_loudvoice_export_posts_ajax');
+add_action('wp_ajax_oa_loudvoice_export_comments', 'oa_loudvoice_export_comments_ajax');
+add_action('wp_ajax_oa_loudvoice_export_cleanup', 'oa_loudvoice_export_cleanup_ajax');
+
+// Import (Admin)
+add_action('wp_ajax_oa_loudvoice_import_posts', 'oa_loudvoice_import_posts_ajax');
+add_action('wp_ajax_oa_loudvoice_import_comments', 'oa_loudvoice_import_comments_ajax');
+add_action('wp_ajax_oa_loudvoice_import_cleanup', 'oa_loudvoice_import_cleanup_ajax');
+
+
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// EXPORT CLEANUP
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 /**
- * Displays a debug message if we are running on cli
+ * Deletes a single comment from LoudVoice
  */
-function oa_loudvoice_debug ($verbose, $message = '')
+function oa_loudvoice_delete_comment_token(&$logs, $comment_token, $log_prefix = '      ')
 {
-	if ($verbose)
-	{
-		$message = (!empty ($message) ? ((is_array ($message) or is_object ($message)) ? "\n" . print_r ($message, true) : $message) : '');
-		echo $message . "\n";
-	}
-}
+    // Is Loudvoice running?
+    if (oa_louddvoice_is_setup())
+    {
+        // Debug
+        $logs[] = $log_prefix . 'Deleting Comment Token: ' . $comment_token;
 
-// ////////////////////////////////////////////////////////////////////////////////////////////////
-// IMPORT
-// ////////////////////////////////////////////////////////////////////////////////////////////////
+        // API Data
+        $lv_data = array(
+            'method' => 'DELETE'
+        );
 
-/**
- * Imports all comments for the given discussion token from Loudvoice to WordPress
- */
-function oa_loudvoice_do_import_comments_for_discussion_token ($verbose, $discussion_token, $page = 1, $entries_per_page = 50)
-{
-	// Result
-	$result = array(
-		'created' => array(),
-		'updated' => array() 
-	);
-	
-	// Is Loudvoice running?
-	if (oa_louddvoice_is_setup ())
-	{		
-		// Post found for this token
-		if (($postid = oa_loudvoice_get_postid_for_token ($discussion_token)) !== false)
-		{
-			// Debug
-			if ($page == 1)
-			{
-				oa_loudvoice_debug ($verbose, ' WordPress PostID Found: ' . $postid);
-			}
-			oa_loudvoice_debug ($verbose, ' Reading Comments, Page: ' . $page);
-			
-			// Make Request
-			$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/discussions/' . $discussion_token . '/comments.json?page=' . $page . '&entries_per_page=' . $entries_per_page);
+        // Remove comments from Loudvoice
+        $api_result = oa_loudvoice_do_api_request_endpoint('/loudvoice/comments/' . $comment_token . '.json?confirm_deletion=true', $lv_data);
 
-			// Check result
-			if (is_object ($api_result) and property_exists ($api_result, 'http_code') and $api_result->http_code == 200)
-			{
-				// Decode result
-				$json = @json_decode ($api_result->http_data);
-				
-				// Make sure it's valid
-				if (is_object ($json) and isset ($json->response->result->data->comments))
-				{
-					// Comments
-					$lv_comments = $json->response->result->data->comments;
-			
-					// Import
-					if (! empty ($lv_comments->entries))
-					{
-						foreach ($lv_comments->entries as $lv_comment)
-						{
-							// Debug
-							oa_loudvoice_debug ($verbose, '  Importing comment_token: ' . $lv_comment->comment_token);
+        // Check result
+        if (is_object($api_result) && property_exists($api_result, 'http_code'))
+        {
+            // 200: Deleted / 404: Does not exist
+            if ($api_result->http_code == 200 || $api_result->http_code == 404)
+            {
+                // Success
+                $logs[] = $log_prefix . 'Token Removed!';
+                return true;
+            }
+            else
+            {
+                // Error
+                $logs[] = $log_prefix . 'Unknown Result Code ' . $api_result->http_code;
+            }
+        }
+        else
+        {
+            // Error
+            $logs[] = $log_prefix . 'Export Error! Invalid JSON received';
+        }
+    }
+    else
+    {
+        // Error
+        $logs[] = $log_prefix . 'Export Error! LoudVoice is not setup correctly';
+    }
 
-							// Comment found in database
-							if (($commentid = oa_loudvoice_get_commentid_for_token ($lv_comment->comment_token)) !== false)
-							{								
-								// Full Comment Data
-								if (($wp_data = get_comment ($commentid, 'ARRAY_A')) !== null)
-								{
-									// Update Fields
-									$wp_data ['comment_approved'] = oa_loudvoice_get_wordpress_approved_status ($lv_comment->moderation_status, $lv_comment->spam_status, $lv_comment->is_trashed);
-
-									$wp_data ['comment_parent'] = ( ! empty ($lv_comment->parent_comment_token) ? oa_loudvoice_get_commentid_for_token ($lv_comment->parent_comment_token) : 0);
-									
-									// Filter
-									$wp_data = wp_filter_comment ($wp_data);
-									
-									// Insert WordPress Comment
-									wp_update_comment ($wp_data);
-									
-									// Updated
-									$result ['updated'] [$commentid] = $lv_comment->comment_token;
-									
-									// Debug
-									oa_loudvoice_debug ($verbose, '   UPDATED WordPress Comment #' . $commentid);
-								}
-							}
-							// Comment not found in database
-							else
-							{
-								// Debug
-								oa_loudvoice_debug ($verbose, '   No WordPress Comment Found ' . $lv_comment->comment_token);
-								oa_loudvoice_debug ($verbose, '   Adding Comment To Post #' . $postid);
-								
-								// Prepare WordPress Comment
-								$wp_data = array(
-									'comment_post_ID'      => $postid,
-									'comment_author'       => ( ! empty ($lv_comment->author->name) ? $lv_comment->author->name : ''), 
-									'comment_author_email' => ( ! empty ($lv_comment->author->email) ? $lv_comment->author->email : ''),
-									'comment_author_url'   => (! empty ($lv_comment->author->website_url) ? $lv_comment->author->website_url : ''),
-									'comment_content'      => $lv_comment->text,
-									'comment_parent'       => ( ! empty ($lv_comment->parent_comment_token) ? oa_loudvoice_get_commentid_for_token ($lv_comment->parent_comment_token) : 0),
-									'user_id'              => 0,
-									'comment_author_IP'    => $lv_comment->ip_address,
-									'comment_agent'        => 'Loudvoice/1.1 WordPress',
-									'comment_date_gmt'     => date ('Y-m-d G:i:s', strtotime ($lv_comment->date_creation)),
-									'comment_approved'     => oa_loudvoice_get_wordpress_approved_status ($lv_comment->moderation_status, $lv_comment->spam_status, $lv_comment->is_trashed) 
-								);
-								
-								// Filter
-								$wp_data = wp_filter_comment ($wp_data);
-								
-								// Insert WordPress Comment
-								$commentid = wp_insert_comment ($wp_data);
-								
-								// Updated
-								$result ['created'] [$commentid] = $lv_comment->comment_token;
-								
-								// Update Meta
-								add_post_meta ($postid, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid(), $lv_comment->comment_token, false);
-								update_post_meta ($postid, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid(), $discussion_token);
-								
-								// Save Comment Meta
-								update_comment_meta ($commentid, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid(), $discussion_token);
-								update_comment_meta ($commentid, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid(), $lv_comment->comment_token);
-
-								// Debug
-								oa_loudvoice_debug ($verbose, '  CREATED WordPress Comment #' . $commentid);
-							}
-
-							// Trash comment and add meta if comments wasn't refused in LoudVoice
-							// So when comments are trashed in WP, you can restore them and keep approved status
-							if ($lv_comment->is_trashed == 1 && $lv_comment->moderation_status != 'refused')
-							{
-								add_comment_meta( $commentid, '_wp_trash_meta_status', 1 );
-								add_comment_meta( $commentid, '_wp_trash_meta_time', time() );
-							}
-								
-						}
-					}
-					
-					// Do we have several pages?
-					if (!empty ($lv_comments->pagination->current_page) && !empty ($lv_comments->pagination->total_pages))
-					{
-						// Do we need to parse another page?
-						if ($lv_comments->pagination->current_page < $lv_comments->pagination->total_pages)
-						{
-							$sub_result = oa_loudvoice_do_import_comments_for_discussion_token ($verbose, $discussion_token, ($lv_comments->pagination->current_page + 1), $entries_per_page);
-							
-							foreach ($result as $key => $value)
-							{
-								$result [$key] += $sub_result [$key];
-							}
-						}
-					}
-				}
-			}
-		}
-		// No post found for this comment
-		else
-		{
-			// Debug
-			oa_loudvoice_debug ($verbose, ' No WordPress PostID found for discussion_token ' . $discussion_token);
-		}
-	}
-	// Done
-	return $result;
+    // Error
+    return false;
 }
 
 /**
- * Imports all comments from Loudvoice to WordPress
+ * Deletes a single post from LoudVoice
  */
-function oa_loudvoice_do_import ($verbose, $page = 1, $entries_per_page = 50)
+function oa_loudvoice_delete_post_token(&$logs, $post_token, $log_prefix = '      ')
 {
-	// Result
-	$result = array();
-	
-	// Is Loudvoice running?
-	if (oa_louddvoice_is_setup ())
-	{
-		// Debug
-		oa_loudvoice_debug ($verbose);
-		oa_loudvoice_debug ($verbose, 'Importing Discussions, Page: ' . $page . ' / Entries Per Page: ' . $entries_per_page);
-		
-		// Make Request
-		$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/discussions.json?page=' . $page . '&entries_per_page=' . $entries_per_page. '&realm=WP-'.oa_loudvoice_uniqid());
+    // Is Loudvoice running?
+    if (oa_louddvoice_is_setup())
+    {
+        // Debug
+        $logs[] = $log_prefix . 'Deleting Post Token: ' . $post_token;
 
-		// Check result
-		if (is_object ($api_result) and property_exists ($api_result, 'http_code') and $api_result->http_code == 200)
-		{
-			// Decode result
-			$json = @json_decode ($api_result->http_data);
-			
-			// Make sure it's valid
-			if (is_object ($json) and isset ($json->response->result->data->discussions))
-			{
-				// Discusisons
-				$lv_discussions = $json->response->result->data->discussions;
-				
-				// Import
-				foreach ($lv_discussions->entries as $lv_data)
-				{
-					// Debug
-					oa_loudvoice_debug ($verbose, 'Importing Discussion ' . $lv_data->discussion_token);
-					
-					// Import Comments
-					$result [$lv_data->discussion_token] = oa_loudvoice_do_import_comments_for_discussion_token ($verbose, $lv_data->discussion_token);
-					
-					// Debug
-					oa_loudvoice_debug ($verbose);
-				}
-				
-				// Do we have several pages?
-				if (!empty ($lv_discussions->pagination->current_page) && !empty ($lv_discussions->pagination->total_pages))
-				{
-					// Do we need to parse another page?
-					if ($lv_discussions->pagination->current_page < $lv_discussions->pagination->total_pages)
-					{
-						$result = $result + oa_loudvoice_do_import ($verbose, ($lv_discussions->pagination->current_page + 1), $entries_per_page);
-					}
-				}
-			}
-		}
-	}
-	
-	// Done
-	return $result;
+        // API Data
+        $lv_data = array(
+            'method' => 'DELETE'
+        );
+
+        // Remove discussion from Loudvoice
+        $api_result = oa_loudvoice_do_api_request_endpoint('/loudvoice/discussions/' . $post_token . '.json?confirm_deletion=true', $lv_data);
+
+        // Check result
+        if (is_object($api_result) && property_exists($api_result, 'http_code'))
+        {
+            // 200: Deleted / 404: Does not exist
+            if ($api_result->http_code == 200 || $api_result->http_code == 404)
+            {
+                // Success
+                $logs[] = $log_prefix . 'Token Removed!';
+                return true;
+            }
+            else
+            {
+                // Error
+                $logs[] = $log_prefix . 'Unknown Result Code ' . $api_result->http_code;
+            }
+        }
+        else
+        {
+            // Error
+            $logs[] = $log_prefix . 'Export Error! Invalid JSON received';
+        }
+    }
+    else
+    {
+        // Error
+        $logs[] = $log_prefix . 'Export Error! LoudVoice is not setup correctly';
+    }
+
+    // Error
+    return false;
 }
 
 /**
- * Imports all comments from Loudvoice to WordPress
+ * Exports Cleanup
  */
-function oa_loudvoice_import ($verbose = false)
+function oa_loudvoice_export_cleanup_ajax()
 {
-	ob_start ();
-	echo "\n[ === IMPORT LOG BELOW === ]\n";
-	$result = oa_loudvoice_do_import (true);
-	$verbose = ob_get_contents ();
-	ob_end_clean ();
-	
-	// Display Result
-	if (is_array ($result))
-	{
-		foreach ($result as $discussion_token => $discussion_data)
-		{
-			oa_loudvoice_debug ($verbose, "  Discussion " . $discussion_token);
-			
-			foreach ($discussion_data as $key => $data)
-			{
-				oa_loudvoice_debug ($verbose, "   " . ucwords ($key) . " " . count ($data) . " Comments");
-			}
-			oa_loudvoice_debug ($verbose);
-		}
-	}
-	
-	// Cleanup Meta
-	oa_loudvoice_cleanup_post_comment_meta ();
+    // Global Vars
+    global $wpdb;
 
-	// Done
-	return $result;
+    // Check AJAX Nonce
+    check_ajax_referer('oa_loudvoice_ajax_nonce');
+
+    // Is Loudvoice running?
+    if (oa_louddvoice_is_setup())
+    {
+        // Logs
+        $logs = array();
+
+        // Comment Tokens to delete
+        $comment_tokens = oa_loudvoice_get_comment_tokens_to_delete();
+        if (is_array($comment_tokens) && count($comment_tokens) > 0)
+        {
+            $logs[] = '[ === Cleaning Up Comment Tokens === ]';
+
+            foreach ($comment_tokens as $comment_token)
+            {
+                $logs[] = '- Comment Token: ' . $comment_token;
+
+                if (oa_loudvoice_delete_comment_token($logs, $comment_token) == true)
+                {
+                    oa_loudvoice_set_to_delete_for_comment_token($comment_token, false);
+                }
+            }
+        }
+
+        // Post Tokens to delete
+        $post_tokens = oa_loudvoice_get_post_tokens_to_delete();
+        if (is_array($post_tokens) && count($post_tokens) > 0)
+        {
+            $logs[] = '[ === Cleaning Up Post Tokens === ]';
+
+            foreach ($post_tokens as $post_token)
+            {
+                $logs[] = '- Post Token: ' . $post_token;
+
+                if (oa_loudvoice_delete_post_token($logs, $post_token) == true)
+                {
+                    oa_loudvoice_set_to_delete_for_post_token($post_token, false);
+                }
+            }
+        }
+
+        // Done
+        $logs[] = '[ === Cleanup Processed === ]';
+
+        // Finished
+        die('success|complete||' . implode("\n", $logs) . "\n");
+    }
+    else
+    {
+        die('error|||[ !!! Error: LoudVoice is not setup !!! ]');
+    }
 }
 
-/**
- * Import all comments from WordPress to Loudvoice, Ajax Call
- */
-function oa_loudvoice_import_ajax ()
-{
-	ob_start ();
-	echo "\n[ === IMPORT LOG BELOW === ]\n\n";
-	$result = oa_loudvoice_import (true);
-	$verbose = ob_get_contents ();
-	ob_end_clean ();
-	
-	// Statistics
-	$num_discussions = 0;
-	$num_comments = 0;
-	
-	// Compute Result
-	if (is_array ($result))
-	{
-		foreach ($result as $postid => $post_data)
-		{
-		
-			if(!empty($post_data['created']) || !empty($post_data['updated']) ){
-				$num_discussions ++;
-			}
-			
-			foreach ($post_data as $key => $data)
-			{
-				$num_comments += count ($data);
-			}
-		}
-	}
-	
-	// Done
-	die ('success|import_done|' . $num_discussions . ' post(s) and ' . $num_comments . ' comment(s) have been processed|' . $verbose);
-}
-add_action ('wp_ajax_oa_loudvoice_import', 'oa_loudvoice_import_ajax');
-
-
-// ////////////////////////////////////////////////////////////////////////////////////////////////
-// EXPORT
-// ////////////////////////////////////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// EXPORT POSTS
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Exports all comments from WordPress to Loudvoice
+ * Exports a single post
  */
-function oa_loudvoice_do_export ($verbose = false)
+function oa_loudvoice_export_postid(&$logs, $postid, $log_prefix = '      ')
 {
-	// Global Vars
-	global $wpdb;
-	
-	// Result
-	$result = array();
-	
-	// Is Loudvoice running?
-	if (oa_louddvoice_is_setup ())
-	{
-		// Read Published Posts
-		$sql = "SELECT * FROM " . $wpdb->posts . " WHERE post_type = 'post' AND post_status = 'publish' ORDER BY ID ASC";
-		$posts = $wpdb->get_results ($sql);
-		
-		// Loop through results
-		if (is_array ($posts))
-		{
-			foreach ($posts as $post)
-			{
-				// Export Post
-				$result [$post->ID] = oa_loudvoice_do_export_comments_for_postid ($verbose, $post->ID);
-				
-				// Debug
-				oa_loudvoice_debug ($verbose);
-			}
-		}
-	}
-	
-	// Done
-	return $result;
+    global $wpdb;
+
+    // Is Loudvoice running?
+    if (oa_louddvoice_is_setup())
+    {
+        // Debug
+        $logs[] = $log_prefix . 'Exporting Post WP# ' . $postid . ' ...';
+
+        // Make sure we have a valid post
+        if (($post = get_post($postid)) !== null)
+        {
+            $discussion_token = oa_loudvoice_get_token_for_post($post->ID);
+            $last_synchronized = oa_loudvoice_get_time_sync_for_post($post->ID);
+            $force_sync = oa_loudvoice_get_force_sync_for_post($post->ID);
+
+            // Debug
+            $logs[] = $log_prefix . '- Last Synchronized: ' . (empty($last_synchronized) ? 'Never' : date("d.m.Y G:i", $last_synchronized));
+
+            // Check if it was already exported
+            if (empty($discussion_token) || $force_sync)
+            {
+                // Forced
+                if ($force_sync)
+                {
+                    $logs[] = $log_prefix . '- Post updated in WordPress, synchronization forced';
+                }
+
+                // API Data
+                $lv_data = array(
+                    'method' => 'PUT',
+                    'post_data' => json_encode(array(
+                        'request' => array(
+                            'discussion' => array(
+                                'realm' => oa_loudvoice_get_realm(),
+                                'title' => oa_loudvoice_get_title_for_post($post),
+                                'url' => oa_loudvoice_get_link_for_post($post),
+                                'is_closed' => oa_loudvoice_get_is_closed_for_post ($post),
+                                'is_trashed' => oa_loudvoice_get_is_trashed_for_post ($post),
+                                'discussion_reference' => oa_loudvoice_get_reference_for_post($post),
+                                'allow_create_discussion_reference' => true
+                            )
+                        )
+                    ))
+                );
+
+                // Push post to Loudvoice
+                $api_result = oa_loudvoice_do_api_request_endpoint('/loudvoice/discussions.json', $lv_data);
+
+                // Check result (201: created, 200: already exists)
+                if (is_object($api_result) && property_exists($api_result, 'http_code'))
+                {
+                    if ($api_result->http_code == 200 || $api_result->http_code == 201)
+                    {
+                        // Decode result
+                        $json = @json_decode($api_result->http_data);
+
+                        // Make sure it's valid
+                        if (is_object($json) and isset($json->response->result->data->discussion))
+                        {
+                            // Grab Token
+                            $discussion_token = $json->response->result->data->discussion->discussion_token;
+
+                            // Success
+                            $logs[] = $log_prefix . '- Discussion Token: ' . $discussion_token;
+                            $logs[] = $log_prefix . 'Exported And ' . ($api_result->http_code == 201 ? 'Created' : 'Updated');
+
+                            // Update Meta
+                            oa_loudvoice_set_token_for_post($post->ID, $discussion_token);
+                            oa_loudvoice_set_time_sync_for_post($post->ID, time());
+                            oa_loudvoice_set_force_sync_for_post($post->ID, false);
+
+                            // Done
+                            return $discussion_token;
+                        }
+                        else
+                        {
+                            // Error
+                            $logs[] = $log_prefix . '- Discussion Token: ' . $discussion_token;
+                            $logs[] = $log_prefix . 'Export Error: Invalid JSON received';
+                        }
+                    }
+                    else
+                    {
+                        // Error
+                        $logs[] = $log_prefix . '- Discussion Token: ' . $discussion_token;
+                        $logs[] = $log_prefix . 'Export Error! Unknown Code ' . $api_result->http_code;
+                    }
+                }
+                else
+                {
+                    // Error
+                    $logs[] = $log_prefix . '- Discussion Token: ' . $discussion_token;
+                    $logs[] = $log_prefix . 'Export Error! Invalid JSON received';
+                }
+            }
+            else
+            {
+                // Success
+                $logs[] = $log_prefix . '- Discussion Token: ' . $discussion_token;
+                $logs[] = $log_prefix . 'Already Synchronized!';
+
+                // Done
+                return $discussion_token;
+            }
+        }
+        else
+        {
+            // Error
+            $logs[] = $log_prefix . 'Export Error! Post identifier #' . $postid . ' is invalid';
+        }
+    }
+    else
+    {
+        // Error
+        $logs[] = $log_prefix . 'Export Error! LoudVoice is not setup correctly';
+    }
 }
 
 /**
  * Exports all comments from WordPress to Loudvoice
  */
-function oa_loudvoice_export ($verbose = false)
+function oa_loudvoice_export_posts_ajax()
 {
-	// Export
-	$result = oa_loudvoice_do_export ($verbose);
-	
-	// Cleanup Meta
-	oa_loudvoice_cleanup_post_comment_meta ();
-	
-	// Done
-	return $result;
+    // Global Vars
+    global $wpdb;
+
+    // Logs
+    $logs = array();
+
+    // Check AJAX Nonce
+    check_ajax_referer('oa_loudvoice_ajax_nonce');
+
+    // Is Loudvoice running?
+    if (oa_louddvoice_is_setup())
+    {
+        // Posts pagination
+        $last_postid = ((isset($_REQUEST['last_id']) && is_numeric($_REQUEST['last_id'])) ? $_REQUEST['last_id'] : null);
+
+        // Read posts (We also take trashed posts, so that we can update their status in LoudVoice)
+        $sql = "SELECT * FROM " . $wpdb->posts . " WHERE post_status IN ('trash', 'publish') AND post_type IN ('post', 'page')";
+
+        // Pagination
+        if (is_numeric($last_postid))
+        {
+            $sql .= " AND ID > '" . intval($last_postid) . "'";
+        }
+
+        // Ordering
+        $sql .= " ORDER by ID ASC LIMIT " . OA_LOUDVOICE_EXPORT_POSTS_STEP;
+
+        // Reset last post
+        $last_postid = null;
+
+        // Loop through results
+        $posts = $wpdb->get_results($sql);
+        if (is_array($posts))
+        {
+            foreach ($posts as $post)
+            {
+                $logs[] = '[ === Processing Post WP#' . $post->ID . ' === ]';
+
+                // Process
+                $discussion_token = oa_loudvoice_export_postid($logs, $post->ID);
+
+                // Last processed post
+                $last_postid = $post->ID;
+
+                // Throttle
+                if ( defined ('OA_LOUDVOICE_EXPORT_POSTS_THROTTLE') && is_numeric (OA_LOUDVOICE_EXPORT_POSTS_THROTTLE))
+                {
+                    usleep(OA_LOUDVOICE_EXPORT_POSTS_THROTTLE);
+                }
+            }
+        }
+
+        // More posts left
+        if (!empty($last_postid))
+        {
+            // Partial Success
+            die('success|partial|' . $last_postid . '|' . implode("\n", $logs) . "\n");
+        }
+        // Mo more posts left
+        else
+        {
+            // Complete Succes
+            $logs[] = '[ === Posts Exported === ]';
+            die('success|complete||' . implode("\n", $logs) . "\n");
+        }
+    }
+    else
+    {
+        die('error|||[ !!! Error: LoudVoice is not setup !!! ]');
+    }
+}
+
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// EXPORT COMMENTS
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Exports a single comment from WordPress to Loudvoice
+ */
+function oa_loudvoice_export_commentid(&$logs, $commentid, $log_prefix = '      ')
+{
+    global $wpdb;
+
+    // Is Loudvoice running?
+    if (oa_louddvoice_is_setup())
+    {
+        // Debug
+        $logs[] = $log_prefix . 'Exporting Comment WP#' . $commentid;
+
+        // Make sure we have a valid comment
+        if (($comment = get_comment($commentid)) !== null)
+        {
+            $comment_token = oa_loudvoice_get_token_for_comment($comment->comment_ID);
+            $last_synchronized = oa_loudvoice_get_time_sync_for_comment($comment->comment_ID);
+            $force_sync = oa_loudvoice_get_force_sync_for_comment($comment->comment_ID);
+
+            // Debug
+            $logs[] = $log_prefix . '- Last Synchronized: ' . (empty($last_synchronized) ? 'Never' : date("d.m.Y G:i", $last_synchronized));
+
+            // Check if we need to synchronize it
+            if (empty($comment_token) || empty ($last_synchronized) || $force_sync)
+            {
+                // Forced
+                if ($force_sync)
+                {
+                    $logs[] = $log_prefix . '- Comment updated in WordPress, synchronization forced';
+                }
+
+                // Get discussion token
+                $discussion_token = oa_loudvoice_get_token_for_post($comment->comment_post_ID);
+
+                // Discussion not found
+                if (empty($discussion_token))
+                {
+                    // Export Discussion
+                    $discussion_token = oa_loudvoice_export_postid($logs, $comment->comment_post_ID);
+
+                    // Debug
+                    $logs[] = $log_prefix . '- Discussion Token Created: ' . $discussion_token;
+                }
+                else
+                {
+                    // Debug
+                    $logs[] = $log_prefix . '- Discussion Token Found: ' . $discussion_token;
+                }
+
+                // Read the parent token
+                if (!empty($commment->comment_parent))
+                {
+                    // Token of the parent comment
+                    $parent_comment_token = oa_loudvoice_get_token_for_comment($comment->comment_parent);
+
+                    // Debug
+                    $logs[] = $log_prefix . '- Parent Comment: ' . $comment->comment_post_ID;
+                    $logs[] = $log_prefix . '- Parent Token: ' . (empty($parent_comment_token) ? 'None' : $parent_comment_token);
+                }
+                // No parent
+                else
+                {
+                    // Token of the parent comment
+                    $parent_comment_token = '';
+
+                    // Debug
+                    $logs[] = $log_prefix . '- Parent Comment: None';
+                }
+
+                // API Data
+                $lv_data = array(
+                    'method' => 'PUT',
+                    'post_data' => json_encode(array(
+                        'request' => array(
+                            'discussion' => array(
+                                'discussion_token' => $discussion_token
+                            ),
+                            'comment' => array(
+                                'realm' => oa_loudvoice_get_realm(),
+                                'parent_comment_token' => $parent_comment_token,
+                                'comment_token' => $comment_token,
+                                'comment_reference' => oa_loudvoice_get_comment_reference_for_comment($comment),
+                                'allow_create_comment_reference' => true,
+                                'allow_create_duplicate_comments' => true,
+                                'is_spam' => oa_loudvoice_wrap_status_for_wp_comment ($comment, 'is_spam'),
+                                'is_trashed' => oa_loudvoice_wrap_status_for_wp_comment ($comment, 'is_trashed'),
+                                'has_been_approved' => oa_loudvoice_wrap_status_for_wp_comment ($comment, 'has_been_approved'),
+                                'date_last_update' => $last_synchronized,
+                                'text' => $comment->comment_content,
+                                'author' => array(
+                                    'author_reference' => oa_loudvoice_get_author_reference_for_comment($comment),
+                                    'name' => $comment->comment_author,
+                                    'email' => $comment->comment_author_email,
+                                    'website_url' => $comment->comment_author_url,
+                                    'picture_url' => oa_loudvoice_get_avatar_url($comment->user_id, $comment->comment_author_email),
+                                    'ip_address' => $comment->comment_author_IP
+                                )
+                            )
+                        )
+                    ))
+                );
+
+                // Push post to Loudvoice
+                $api_result = oa_loudvoice_do_api_request_endpoint('/loudvoice/comments.json', $lv_data);
+
+                // Check result
+                if (is_object($api_result) && property_exists($api_result, 'http_code'))
+                {
+                    // 201: created, 200: already exists
+                    if ($api_result->http_code == 200 || $api_result->http_code == 201)
+                    {
+                        // Decode result
+                        $json = @json_decode($api_result->http_data);
+
+                        // Make sure it's valid
+                        if (is_object($json) and isset($json->response->result->data->comment))
+                        {
+                            // Grab Token
+                            $comment_token = $json->response->result->data->comment->comment_token;
+
+                            // Debug
+                            $logs[] = $log_prefix . '- Comment Token: ' . $comment_token;
+                            $logs[] = $log_prefix . 'Exported And ' . ($api_result->http_code == 201 ? 'Created' : 'Updated');
+
+                            // Update Meta
+                            oa_loudvoice_set_token_for_comment($comment->comment_ID, $comment_token);
+                            oa_loudvoice_set_time_sync_for_comment($comment->comment_ID, time());
+                            oa_loudvoice_set_force_sync_for_comment($comment->comment_ID, false);
+
+                            // Done
+                            return $comment_token;
+                        }
+                        else
+                        {
+                            // Error
+                            $logs[] = $log_prefix . '- Comment Token: ' . $comment_token;
+                            $logs[] = $log_prefix . 'Export Error: Invalid JSON received';
+                        }
+                    }
+                    // 404: token not found
+                    elseif ($api_result->http_code == 404)
+                    {
+                        // Decode result
+                        $json = @json_decode($api_result->http_data);
+
+                        // Recreate Discussion?
+                        $recreate_discussion = false;
+
+                        // Make sure it's valid
+                        if (is_object($json) && isset($json->response->request->status->info))
+                        {
+                            // The node [request->discussion->discussion_token] is invalid, no discussion has been found for that token
+                            if (stripos($json->response->request->status->info, 'no discussion has been found') !== false)
+                            {
+                                $recreate_discussion = true;
+                            }
+                        }
+
+                        // Error
+                        $logs[] = $log_prefix . '- Comment Token: ' . $comment_token;
+
+                        // Recreate discussion
+                        if ($recreate_discussion)
+                        {
+                            $logs[] = $log_prefix . 'Invalid Discussion Token! Recreating Token.';
+
+                            // Remove Meta
+                            oa_loudvoice_set_token_for_post($comment->comment_post_ID, null);
+                            oa_loudvoice_set_time_sync_for_post($comment->comment_post_ID, null);
+
+                            // Retry
+                            return oa_loudvoice_export_commentid($logs, $comment->comment_ID, $log_prefix.'  ');
+                        }
+                        else
+                        {
+                            $logs[] = $log_prefix . 'Invalid Comment Token! Recreating Token.';
+
+                            // Remove Meta
+                            oa_loudvoice_set_token_for_comment($comment->comment_ID, null);
+                            oa_loudvoice_set_time_sync_for_comment($comment->comment_ID, null);
+
+                            // Retry
+                            return oa_loudvoice_export_commentid($logs, $comment->comment_ID, $log_prefix.'  ');
+                        }
+                    }
+                    else
+                    {
+                        // Error
+                        $logs[] = $log_prefix . '- Comment Token: ' . $comment_token;
+                        $logs[] = $log_prefix . 'Export Error! Unknown Code ' . $api_result->http_code;
+                    }
+                }
+                else
+                {
+                    // Error
+                    $logs[] = $log_prefix . '- Comment Token: ' . $comment_token;
+                    $logs[] = $log_prefix . 'Export Error! Invalid JSON received';
+                }
+            }
+            else
+            {
+                // Success
+                $logs[] = $log_prefix . '- Comment Token: ' . $comment_token;
+                $logs[] = $log_prefix . 'Already Synchronized!';
+
+                // Done
+                return $comment_token;
+            }
+        }
+        else
+        {
+            // Error
+            $logs[] = $log_prefix . 'Export Error! Comment identifier #' . $commentid . ' is invalid';
+        }
+    }
+    else
+    {
+        // Error
+        $logs[] = $log_prefix . 'Export Error! LoudVoice is not setup correctly';
+    }
 }
 
 /**
  * Exports all comments from WordPress to Loudvoice, Ajax Call
  */
-function oa_loudvoice_export_ajax ()
+function oa_loudvoice_export_comments_ajax()
 {
-	ob_start ();
-	echo "\n[ === EXPORT LOG BELOW === ]\n\n";
-	$result = oa_loudvoice_export (true);
-	$verbose = ob_get_contents ();
-	ob_end_clean ();
-	
-	// Statistics
-	$num_discussions = 0;
-	$num_comments = 0;
-	
-	// Compute Result
-	if (is_array ($result))
-	{
-		foreach ($result as $postid => $post_data)
-		{
-			$num_discussions ++;
-			
-			foreach ($post_data as $key => $data)
-			{
-				$num_comments += count ($data);
-			}
-		}
-	}
-	
-	// Done
-	die ('success|export_done|' . $num_discussions . ' post(s) and ' . $num_comments . ' comment(s) have been processed|' . $verbose);
+    // Global Vars
+    global $wpdb;
+
+    // Logs
+    $logs = array();
+
+    // Check AJAX Nonce
+    check_ajax_referer('oa_loudvoice_ajax_nonce');
+
+    // Is Loudvoice running?
+    if (oa_louddvoice_is_setup())
+    {
+        // Comments pagination
+        $last_commentid = ((isset($_REQUEST['last_id']) && is_numeric($_REQUEST['last_id'])) ? $_REQUEST['last_id'] : null);
+
+        // Update time
+        update_option('oa_loudvoice_api_last_export', time());
+
+        // Read comments
+        $sql = "SELECT * FROM " . $wpdb->comments . " WHERE comment_type != 'trackback' AND comment_type != 'pingback'";
+
+        // Pagination
+        if (is_numeric($last_commentid))
+        {
+            $sql .= " AND comment_ID > '" . intval($last_commentid) . "'";
+        }
+
+        // Ordering
+        $sql .= " ORDER by comment_ID ASC LIMIT " . OA_LOUDVOICE_EXPORT_COMMENTS_STEP;
+
+        // Reset last comment
+        $last_commentid = null;
+
+        // Loop through results
+        $comments = $wpdb->get_results($sql);
+        if (is_array($comments))
+        {
+            foreach ($comments as $comment)
+            {
+                $logs[] = '[ === Processing Comment WP#' . $comment->comment_ID . ' === ]';
+
+                // Process
+                $comment_token = oa_loudvoice_export_commentid($logs, $comment->comment_ID);
+
+                // Last processed comment
+                $last_commentid = $comment->comment_ID;
+
+                // Throttle
+                if ( defined ('OA_LOUDVOICE_EXPORT_COMMENTS_THROTTLE') && is_numeric (OA_LOUDVOICE_EXPORT_COMMENTS_THROTTLE))
+                {
+                    usleep(OA_LOUDVOICE_EXPORT_COMMENTS_THROTTLE);
+                }
+            }
+        }
+
+        // More posts left
+        if (!empty($last_commentid))
+        {
+            die('success|partial|' . $last_commentid . '|' . implode("\n", $logs) . "\n");
+        }
+        // Mo more comments left
+        else
+        {
+            // Add Log
+            $logs[] = '[ === Comments Exported, Unique ID '.oa_loudvoice_uniqid().' === ]';
+
+            // Finished
+            die('success|complete||' . implode("\n", $logs) . "\n");
+        }
+    }
+    else
+    {
+        die('error|||[ !!! Error: LoudVoice is not setup !!! ]');
+    }
 }
-add_action ('wp_ajax_oa_loudvoice_export', 'oa_loudvoice_export_ajax');
+
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// IMPORT POSTS
+// /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Exports all comments of the given post from WordPress to Loudvoice
+ * Cleanup after import
  */
-function oa_loudvoice_do_export_comments_for_postid ($verbose, $postid)
+function oa_loudvoice_import_cleanup_ajax()
 {
-	global $wpdb;
-	
-	// Result
-	$result = array(
-		'created' => array(),
-		'updated' => array() 
-	);
-
-	$wp_all_discussions = array('realm' => 'WP-'.oa_loudvoice_uniqid(), 'discussions' => array());
-	
-	// Is Loudvoice running?
-	if (oa_louddvoice_is_setup ())
-	{
-		// Make sure we have a valid post
-		if (($post = get_post ($postid)) !== null)
-		{
-			// Reference
-			$discussion_reference = oa_loudvoice_get_reference_for_post ($post);
-			
-			// Debug
-			oa_loudvoice_debug ($verbose, ' Exporting Post WP#' . $postid . ' / ' . $discussion_reference);
-			
-			// API Data
-			$lv_data = array(
-				'method' => 'PUT',
-				'post_data' => json_encode (array(
-					'request' => array(
-						'discussion' => array(
-							'realm'                             => 'WP-'.oa_loudvoice_uniqid(),
-							'title'                             => oa_loudvoice_get_title_for_post ($post),
-							'url'                               => oa_loudvoice_get_link_for_post ($post),
-							'discussion_reference'              => $discussion_reference,
-							'allow_create_discussion_reference' => true 
-						) 
-					) 
-				)) 
-			);
-			
-			// Push post to Loudvoice
-			$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/discussions.json', $lv_data);
-			
-			// Check result (201: created, 200: already exists)
-			if (is_object ($api_result) && property_exists ($api_result, 'http_code') && ($api_result->http_code == 200 || $api_result->http_code == 201))
-			{
-				// Debug
-				oa_loudvoice_debug ($verbose, '  Post Exported (+' . ($api_result->http_code == 201 ? 'Created' : 'Updated') . ')');
-				
-				// Decode result
-				$json = @json_decode ($api_result->http_data);
-				
-				// Make sure it's valid
-				if (is_object ($json) and isset ($json->response->result->data->discussion))
-				{
-					// Discussion
-					$lv_discussion = $json->response->result->data->discussion;
-					
-					// Token
-					$discussion_token = $lv_discussion->discussion_token;
-
-					//save discussion
-					$wp_all_discussions['discussions'][$postid] = array(
-						'reference' => $discussion_reference
-					); 
-					
-					// Update Meta
-					update_post_meta ($postid, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid(), $discussion_token);
-					
-					// Now we synchronize the comments
-					$sql = "SELECT * FROM " . $wpdb->comments . " WHERE comment_post_ID='" . $postid . "' AND comment_type != 'trackback' AND comment_type != 'pingback' ORDER BY comment_parent ASC";
-					$wp_comments = $wpdb->get_results ($sql);
-					
-					// Comments found?
-					if (is_array ($wp_comments))
-					{
-						// Cleanup synchronized comments
-						delete_post_meta ($postid, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid());
-						
-						// Loop through comments
-						foreach ($wp_comments as $wp_comment)
-						{
-							// Comment
-							$commentid = $wp_comment->comment_ID;
-							
-							// Read the token
-							$comment_token = oa_loudvoice_get_token_for_commentid ($commentid);
-
-							//save discussion
-							$wp_all_discussions['discussions'][$postid]['comments'][$commentid] = oa_loudvoice_get_comment_reference_for_comment ($wp_comment); 
-
-							//save comments
-							$wp_discussions[] = array('id' => $postid, 'reference' => $discussion_reference, 'token' => $discussion_token); 
-
-				
-							// Read the parent token
-							if ( ! empty ($wp_comment->comment_parent))
-							{
-								$parent_comment_token = oa_loudvoice_get_token_for_commentid ($wp_comment->comment_parent);
-								
-								// Debug
-								oa_loudvoice_debug ($verbose, '    Parent Comment Token: '.$parent_comment_token);
-								
-							}
-							// No parent
-							else
-							{
-								$parent_comment_token = '';
-							}
-							
-							// Debug
-							oa_loudvoice_debug ($verbose, '   Exporting Comment WP#' . $commentid);
-							
-							// Make sure the token is valid
-							if (!empty ($comment_token))
-							{
-								// Read Comment
-								$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/comments/' . $comment_token . '.json');
-								if (is_object ($api_result) && property_exists ($api_result, 'http_code'))
-								{
-									// Comment Does not exist
-									if ($api_result->http_code == 404)
-									{
-										// Debug
-										oa_loudvoice_debug ($verbose, '   Orphan Comment Token Found (+Meta Removed)');
-										
-										// Remove Comment Meta
-										delete_comment_meta ($commentid, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid());
-										delete_comment_meta ($commentid, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid());
-										
-										// Reset Token
-										$comment_token = null;
-									}
-								}
-							}
-							
-							// API Data
-							$lv_data = array(
-								'method' => 'PUT',
-								'post_data' => json_encode (array(
-									'request' => array(
-										'discussion' => array(
-											'discussion_token' => $discussion_token 
-										),
-										'comment' => array(
-											'realm'                           => 'WP-'.oa_loudvoice_uniqid(),
-											'parent_comment_token'            => $parent_comment_token,
-											'comment_token'                   => $comment_token,
-											'comment_reference'               => oa_loudvoice_get_comment_reference_for_comment ($wp_comment),
-											'allow_create_comment_reference'  => true,
-											'allow_create_duplicate_comments' => true,
-											'moderation_status'               => oa_loudvoice_get_moderation_status_for_comment ($wp_comment),
-											'spam_status'                     => oa_loudvoice_get_spam_status_for_comment ($wp_comment),
-											'is_trashed'                      => oa_loudvoice_get_is_trashed_status_for_comment ($wp_comment),
-											'text'                            => $wp_comment->comment_content,
-											'author' => array(
-												'author_reference' => oa_loudvoice_get_author_reference_for_comment ($wp_comment),
-												'name'             => $wp_comment->comment_author,
-												'email'            => $wp_comment->comment_author_email,
-												'website_url'      => $wp_comment->comment_author_url,
-												'picture_url'      => oa_loudvoice_get_avatar_url ($wp_comment->user_id, $wp_comment->comment_author_email),
-												'ip_address'       => $wp_comment->comment_author_IP 
-											) 
-										) 
-									) 
-								)) 
-							);
-							
-							// Push post to Loudvoice
-							$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/comments.json', $lv_data);
-
-							// Check result (201: created, 200: already exists)
-							if (is_object ($api_result) && property_exists ($api_result, 'http_code'))
-							{
-								if ($api_result->http_code == 200 || $api_result->http_code == 201)
-								{
-									// Decode result
-									$json = @json_decode ($api_result->http_data);
-									
-									// Comment
-									$comment_token = $json->response->result->data->comment->comment_token;
-									
-									// Debug
-									oa_loudvoice_debug ($verbose, '    Comment Exported (+' . ($api_result->http_code == 201 ? 'Created' : 'Updated') . ')');
-									oa_loudvoice_debug ($verbose, '    Comment Token: ' . $comment_token);
-									
-									// Save Post Meta
-									add_post_meta ($postid, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid(), $comment_token, false);
-									update_post_meta ($postid, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid(), $discussion_token);
-									
-									// Save Comment Meta
-									update_comment_meta ($commentid, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid(), $discussion_token);
-									update_comment_meta ($commentid, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid(), $comment_token);
-									
-									// Updated
-									$result [($api_result->http_code == 201 ? 'created' : 'updated')] [$commentid] = $comment_token;
-								}
-								else
-								{
-									
-									// Debug
-									oa_loudvoice_debug ($verbose, '    Comment Export Error, Code ' . print_r($api_result,true));
-								}
-							}
-							else
-							{
-								// Debug
-								oa_loudvoice_debug ($verbose, '    API Communication Error');
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-
-	// ********************
-	// Remove/Trash old discussions/comments in LoudVoice
-	// ********************
-
-	// API Data
-	$lv_data = array(
-		'method' => 'DELETE',
-		'post_data' => json_encode (array(
-			'request' => $wp_all_discussions
-		)) 
-	);
-	
-	// Push post to Loudvoice
-	$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/clean.json', $lv_data);
-
-	// Check result
-	if (is_object ($api_result) and property_exists ($api_result, 'http_code'))
-	{				
-		if ($api_result->http_code == 200)
-		{
-			// Decode result
-			$json = @json_decode ($api_result->http_data);
-
-			// Make sure it's valid
-			if (is_object ($json) and isset ($json->response->result->data->nb_removed_discussion))
-			{
-				if ($json->response->result->data->nb_removed_discussion > 0 || $json->response->result->data->nb_removed_comments > 0){
-					oa_loudvoice_debug ($verbose, '   Cleanup : discussions : ' . $json->response->result->data->nb_removed_discussion.' - comments : ' . $json->response->result->data->nb_removed_comments);
-				}
-			}
-
-		}
-	}
-
-
-	// Done
-	return $result;
+    die('success|complete||');
 }
-
-// ////////////////////////////////////////////////////////////////////////////////////////////////
-// SYNC HOOKS
-// ////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Synchronize LV -> WP, Ajax Call
+ * Import all posts from LoudVoice to WordPress
  */
-function oa_loudvoice_import_comment_ajax ()
+function oa_loudvoice_import_posts_ajax()
 {
-	// Check AJAX Nonce
-	check_ajax_referer ('oa_loudvoice_ajax_nonce');
-	
-	// Status Message
-	$status_message = '';
-	
-	// Is Loudvoice running?
-	if (oa_louddvoice_is_setup ())
-	{
-		// Arguments
-		$postid =  (!empty ($_REQUEST ['postid']) ? intval (trim ($_REQUEST ['postid'])) : null);
-		$comment_token = ((!empty ($_REQUEST ['comment_token']) && oa_loudvoice_is_valid_uuid ($_REQUEST ['comment_token'])) ? $_REQUEST ['comment_token'] : null);
-
-		// We need both arguments
-		if (!empty ($postid) && !empty ($comment_token))
-		{
-			// Pull Comment
-			$api_result = oa_loudvoice_do_api_request_endpoint ('/loudvoice/comments/' . $comment_token . '.json');
-
-			// Check result
-			if (is_object ($api_result) and property_exists ($api_result, 'http_code'))
-			{			
-				if ($api_result->http_code == 200)
-				{
-					// Decode result
-					$json = @json_decode ($api_result->http_data);
-
-					// Make sure it's valid
-					if (is_object ($json) and isset ($json->response->result->data->comment))
-					{
-						// Loudvoice Objects
-						$lv_discussion = $json->response->result->data->discussion;
-						$lv_comment = $json->response->result->data->comment;
-
-						// Validate the references before doing anything else
-						if ($lv_discussion->discussion_reference == oa_loudvoice_get_reference_for_post ($postid))
-						{
-							// Make sure the comment has not yet been synchronized							
-							if (($commentid = oa_loudvoice_get_commentid_for_token ($comment_token)) == false)
-							{
-								// Prepare WordPress Comment
-								$data = array(
-									'comment_post_ID' => $postid,
-									'comment_author' => $lv_comment->author->name,
-									'comment_author_email' => $lv_comment->author->email,
-									'comment_author_url' => '',
-									'comment_content' => $lv_comment->text,
-									'comment_parent' => ( ! empty ($lv_comment->parent_comment_token) ? oa_loudvoice_get_commentid_for_token ($lv_comment->parent_comment_token) : 0),
-									'user_id' => 0,
-									'comment_author_IP' => $lv_comment->ip_address,
-									'comment_agent' => 'Loudvoice/1.1 WordPress',
-									'comment_date_gmt' => date ('Y-m-d G:i:s', strtotime ($lv_comment->date_creation)),
-									'comment_approved' => oa_loudvoice_get_wordpress_approved_status ($lv_comment->moderation_status, $lv_comment->spam_status, $lv_comment->is_trashed) 
-								);
-								
-								// Filter
-								$data = wp_filter_comment ($data);
-								
-								// Insert WordPress Comment
-								$commentid = wp_insert_comment ($data);
-								
-								// Save Post Meta
-								add_post_meta ($postid, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid(), $lv_comment->comment_token, false);
-								update_post_meta ($postid, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid(), $lv_discussion->discussion_token);
-								
-								// Save Comment Meta
-								update_comment_meta ($commentid, '_oa_loudvoice_synchronized_discussion_'.oa_loudvoice_uniqid(), $lv_discussion->discussion_token);
-								update_comment_meta ($commentid, '_oa_loudvoice_synchronized_comments_'.oa_loudvoice_uniqid(), $lv_comment->comment_token);
-								
-								// Synchronized
-								$status_message = 'success_comment_synchronized';
-							}
-							// Already Synchronized
-							else
-							{
-								$status_message = 'success_comment_already_synchronized';
-							}
-						}
-						// Error
-						else
-						{
-							$status_message = 'error_invalid_post_reference';
-						}
-					}
-					// Error
-					else
-					{
-						$status_message = 'error_invalid_data_format';
-					}
-				}
-				else
-				{
-					$status_message = 'error_invalid_result_code';
-				}
-			}
-			else 
-			{
-				$status_message = 'error_communication_issue';
-			}
-		}
-		// Error
-		else
-		{
-			$status_message = 'error_invalid_arguments';
-		}
-	}
-	// Error
-	else
-	{
-		$status_message = 'error_loudvoice_not_setup';
-	}
-	
-	// Done
-	echo $status_message;
-	die ();
+    die('success|complete||');
 }
-add_action ('wp_ajax_nopriv_import_comment', 'oa_loudvoice_import_comment_ajax');
-add_action ('wp_ajax_import_comment', 'oa_loudvoice_import_comment_ajax');
+
+/**
+ * Import all comments from LoudVoice to WordPress
+ */
+function oa_loudvoice_import_comments_ajax()
+{
+    // Global Vars
+    global $wpdb;
+
+    // Logs
+    $logs = array();
+
+    // Check AJAX Nonce
+    check_ajax_referer('oa_loudvoice_ajax_nonce');
+
+    // Is Loudvoice running?
+    if (oa_louddvoice_is_setup())
+    {
+        // Posts pagination
+        $page = ((isset($_REQUEST['last_id']) && is_numeric($_REQUEST['last_id'])) ? ($_REQUEST['last_id'] + 1) : 1);
+
+        // Update time
+        update_option('oa_loudvoice_api_last_import', time());
+
+        // Next page
+        $next_page = null;
+
+        // Read comments
+        $api_result = oa_loudvoice_do_api_request_endpoint('/loudvoice/comments.json?page=' . $page . '&entries_per_page=' . OA_LOUDVOICE_IMPORT_COMMENTS_STEP);
+
+        // Check result
+        if (is_object($api_result) && property_exists($api_result, 'http_code') && $api_result->http_code == 200)
+        {
+            // Decode result
+            $json = @json_decode($api_result->http_data);
+
+            // Make sure it's valid
+            if (is_object($json) && isset($json->response->result->data->comments))
+            {
+                // Check if more pages need to be processed afterwards
+                if ($json->response->result->data->comments->pagination->current_page < $json->response->result->data->comments->pagination->total_pages)
+                {
+                    $next_page = $page;
+                }
+
+                // Comments
+                $comments = $json->response->result->data->comments->entries;
+
+                // Import
+                if (is_array($comments))
+                {
+                    foreach ($comments as $comment)
+                    {
+                        // Debug
+                        $logs[] = '[ === Processing Comment Token ' . $comment->comment_token . ' === ]';
+
+                        // Comment found in database
+                        if (($commentid = oa_loudvoice_get_commentid_for_token($comment->comment_token)) !== false)
+                        {
+                            $logs[] = '     - WordPress Comment Found WP#' . $commentid;
+
+                            // Read comment data
+                            if (($wp_data = get_comment($commentid, 'ARRAY_A')) !== null)
+                            {
+                                // Setup Fields
+                                $wp_data['comment_content'] = $comment->text;
+                                $wp_data['comment_approved'] = oa_loudvoice_wrap_status_for_lv_comment($comment, 'comment_approved');
+                                $wp_data['comment_parent'] = (!empty($comment->parent_comment_token) ? oa_loudvoice_get_commentid_for_token($comment->parent_comment_token) : 0);
+                                $wp_data = wp_filter_comment($wp_data);
+
+                                // Update Comment
+                                wp_update_comment($wp_data);
+
+                                // Update Meta
+                                oa_loudvoice_set_time_sync_for_comment($commentid, time());
+                                oa_loudvoice_set_force_sync_for_comment($commentid, false);
+
+                                // Log
+                                $logs[] = '     - Existing comment updated';
+                            }
+                            // Invalid Comment Identifier
+                            else
+                            {
+                                // Log
+                                $logs[] = '     - Comment WP#' . $commentid." does not exist, removing orphan token";
+
+                                // Remove Meta
+                                oa_loudvoice_set_token_for_comment ($commentid, null);
+                                oa_loudvoice_set_time_sync_for_comment($commentid, null);
+                                oa_loudvoice_set_force_sync_for_comment($commentid, false);
+
+                                // Reset Comment Identifer
+                                $commentid = null;
+                            }
+                        }
+
+
+                        // Comment not found in database
+                        if (empty ($commentid))
+                        {
+                            // Log
+                            $logs[] = '     - No WordPress comment found';
+                            $logs[] = '     - Trying to find post for Discussion Token '.$comment->discussion->discussion_token;
+
+                            // Post found in database
+                            if (($postid = oa_loudvoice_get_postid_for_token($comment->discussion->discussion_token)) !== false)
+                            {
+                                // Log
+                                $logs[] = '     - Post WP# '.$postid.' found';
+                                $logs[] = '     - Trying to find user for Reference '.$comment->author->author_reference;
+
+                                // Comment Writer
+                                $comment_user_id = 0;
+
+                                // Try to lookup author
+                                if (($userid = oa_loudvoice_get_userid_for_reference ($comment->author->author_reference)) !== false)
+                                {
+                                    if (($user_data = get_userdata ($userid)) !== false)
+                                    {
+                                       $comment_user_id = $user_data->ID;
+                                    }
+                                }
+
+                                if (empty ($comment_user_id))
+                                {
+                                    $logs[] = '     - No user found, creating guest comment';
+                                }
+                                else
+                                {
+                                    $logs[] = '     - User WP#'. $comment_user_id.' found';
+                                }
+
+                                // Prepare WordPress Comment
+                                $wp_data = array(
+                                    'comment_post_ID' => $postid,
+                                    'comment_author' => (!empty($comment->author->name) ? $comment->author->name : ''),
+                                    'comment_author_email' => (!empty($comment->author->email) ? $comment->author->email : ''),
+                                    'comment_author_url' => (!empty($comment->author->website_url) ? $comment->author->website_url : ''),
+                                    'comment_content' => $comment->text,
+                                    'comment_parent' => (!empty($comment->parent_comment_token) ? oa_loudvoice_get_commentid_for_token($comment->parent_comment_token) : 0),
+                                    'user_id' => $comment_user_id,
+                                    'comment_author_IP' => $comment->ip_address,
+                                    'comment_agent' => OA_LOUDVOICE_AGENT,
+                                    'comment_date_gmt' => date('Y-m-d G:i:s', strtotime($comment->date_creation)),
+                                    'comment_approved' => oa_loudvoice_wrap_status_for_lv_comment($comment, 'comment_approved')
+                                );
+
+                                // Filter
+                                $wp_data = wp_filter_comment($wp_data);
+
+                                // Add Comment
+                                $commentid = wp_insert_comment($wp_data);
+
+                                // Update Meta
+                                oa_loudvoice_set_token_for_comment($commentid, $comment->comment_token);
+                                oa_loudvoice_set_time_sync_for_comment($commentid, time());
+                                oa_loudvoice_set_force_sync_for_comment($commentid, false);
+
+                                // Log
+                                $logs[] = '     - Added comment WP #' . $commentid;
+                            }
+                            // Post not found
+                            else
+                            {
+                                // Log
+                                $logs[] = '     - No post found, skipping import of this comment.';
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (isset ($api_result->http_code) && in_array ($api_result->http_code, array (404, 401)))
+            {
+                $logs[] = $log_prefix . 'Export Error! Please check the API setup in the LoudVoice settings';
+            }
+            else
+            {
+                // Error
+                $logs[] = $log_prefix . 'Export Error! LoudVoice is not setup correctly. Error Code #'.$api_result->http_code ;
+            }
+        }
+
+        // More comments left
+        if (!empty($next_page))
+        {
+            // Partial Success
+            die('success|partial|' . $next_page . '|' . implode("\n", $logs) . "\n");
+        }
+        // Mo more posts left
+        else
+        {
+            // Complete Succes
+            $logs[] = '[ === Comments Imported, Unique ID '.oa_loudvoice_uniqid().' === ]';
+            die('success|complete||' . implode("\n", $logs) . "\n");
+        }
+    }
+    else
+    {
+        die('error|||[ !!! Error: LoudVoice is not setup !!! ]');
+    }
+}
