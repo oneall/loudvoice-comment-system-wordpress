@@ -3,7 +3,7 @@ Contributors: Damien Zara, OneAll.com
 Tags: comments, comment, system, realtime, commenting, comment system, comments system, wordpress comments, discuss, discussion, discussion, spam, threaded, social networks, facebook, twitter, linkedin
 Requires at least: 3.0
 Tested up to: 4.7.3
-Stable tag: 2.0
+Stable tag: 2.1.0
  
 LoudVoice replaces the basic WordPress comments by a <strong>powerful comment system</strong> that includes logging in with 30+ social networks,
 spam filters and more.
@@ -21,36 +21,44 @@ spam filters and more.
  
 <strong>Social Login</strong>
 <ul>
- <li>Amazon</li>
- <li>Battle.net</li>
- <li>Blogger</li>
- <li>Disqus</li>
- <li>Dribbble</li>
- <li>Facebook</li>
- <li>Foursquare</li>
- <li>Github.com</li>
- <li>Google</li>
- <li>Instagram</li>
- <li>LinkedIn</li>
- <li>LiveJournal</li>
- <li>Mail.ru</li>
- <li>Odnoklassniki</li>
- <li>OpenID</li>
- <li>PayPal</li>
- <li>Pinterest</li>
- <li>PixelPin</li> 
- <li>Reddit</li>
- <li>Skyrock.com</li>		
- <li>StackExchange</li>
- <li>Steam</li>
- <li>Twitch.tv</li>
- <li>Twitter</li>
- <li>Vimeo</li>
- <li>VKontakte</li>
- <li>Windows Live</li>
- <li>WordPress.com</li>
- <li>Yahoo</li>
- <li>YouTube</li>
+	<li>Amazon</li>
+	<li>Battle.net</li>
+	<li>Blogger</li>
+	<li>Discord</li>
+	<li>Disqus</li>
+	<li>Draugiem</li>
+	<li>Dribbble</li>
+	<li>Facebook</li>
+	<li>Foursquare </li>
+	<li>Github.com</li>
+	<li>Google</li>
+	<li>Instagram</li>
+	<li>Line</li>
+	<li>LinkedIn</li>
+	<li>LiveJournal</li>
+	<li>Mail.ru</li>
+	<li>Meetup</li>
+	<li>Odnoklassniki</li>
+	<li>OpenID</li>
+	<li>PayPal</li>
+	<li>Pinterest</li>
+	<li>PixelPin</li>
+	<li>Reddit</li>
+	<li>Skyrock.com</li>
+	<li>SoundCloud</li>
+	<li>StackExchange</li>
+	<li>Steam</li>
+	<li>Tumblr</li>
+	<li>Twitch.tv</li>
+	<li>Twitter</li>
+	<li>Vimeo</li>
+	<li>VKontakte</li>
+	<li>Weibo</li>
+	<li>Windows Live</li>
+	<li>WordPress.com</li>
+	<li>Xing</li>
+	<li>Yahoo</li>
+	<li>YouTube</li>
 </ul>
 
 <strong>Social Sharing</strong>
@@ -98,6 +106,10 @@ http://support.oneall.com/forums/
 
 
 == Changelog ==
+
+= 2.1.0 =
+* Link fixed in comments page
+* New providers added
 
 = 2.0 =
 * Core functions rewritten

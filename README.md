@@ -1,6 +1,6 @@
-# LoudVoice
+# LoudVoice 2.1.0 for WordPress 3.0+
 LoudVoice replaces the basic WordPress comments by a **powerful comment system** that includes logging in with 
-30+ social networks, spam filters and more.
+35+ social networks, spam filters and more.
  
  
 ## Plugin Installation
@@ -27,31 +27,39 @@ https://wordpress.org/plugins/loudvoice-comment-system/
 * Amazon
 * Battle.net
 * Blogger
+* Discord
 * Disqus
+* Draugiem
 * Dribbble
 * Facebook
-* Foursquare
+* Foursquare 
 * Github.com
 * Google
 * Instagram
+* Line
 * LinkedIn
 * LiveJournal
 * Mail.ru
+* Meetup
 * Odnoklassniki
 * OpenID
 * PayPal
 * Pinterest
-* PixelPin 
+* PixelPin
 * Reddit
-* Skyrock.com		
+* Skyrock.com
+* SoundCloud
 * StackExchange
 * Steam
+* Tumblr
 * Twitch.tv
 * Twitter
 * Vimeo
 * VKontakte
+* Weibo
 * Windows Live
 * WordPress.com
+* Xing
 * Yahoo
 * YouTube
 
@@ -64,5 +72,8 @@ https://wordpress.org/plugins/loudvoice-comment-system/
 ## About Us
 LoudVoice is maintained by [OneAll](http://www.oneall.com/). OneAll, a technology company offering a set of 
 web-delivered tools and services for establishing and optimizing a site's connection with social networks.
+
+## License
+The **GNU General Public License** (GPL) is available at http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
 
 **Fork us on Github!**

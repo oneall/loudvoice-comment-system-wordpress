@@ -16,7 +16,6 @@ function oa_loudvoice_load_dashboardjs_scripts()
 }
 add_action('admin_enqueue_scripts', 'oa_loudvoice_load_dashboardjs_scripts');
 
-
 /**
  * Adds a warning in edit-comments.php page to prevent users to use old way to manage their comments
  */
@@ -38,7 +37,7 @@ function oa_loudvoice_edit_comments_message()
 						<div><strong>' . __('You are currently using the LoudVoice comment platform.', 'oa_loudvoice') . '</strong></div>
 						<div>' . __('If you manage your comments on this page, they will not be updated on LoudVoice unless you <a href="admin.php?page=oa_loudvoice_synchronize">export</a> them manually.', 'oa_loudvoice') . '</div>
 						<div>' . __('The best solution is to access the LoudVoice comment management system and to mange your comments from there.', 'oa_loudvoice') . '</div>
-						<div><p><a class="button-secondary" href="https://app.oneall.com/loudvoice/" target="_blank"><strong> ' . __('Click here to manage your comments', 'oa_loudvoice') . '</strong></a></p></div>
+						<div><p><a class="button-secondary" href="https://app.oneall.com/loudvoice/comments/" target="_blank"><strong> ' . __('Click here to manage your comments', 'oa_loudvoice') . '</strong></a></p></div>
 				    </div>
 				</div>
 			</div>';
@@ -46,7 +45,6 @@ function oa_loudvoice_edit_comments_message()
     }
 }
 add_action('admin_notices', 'oa_loudvoice_edit_comments_message');
-
 
 /**
  * Adds a warning to be displayed when LoudVoice needs to be setup
@@ -58,7 +56,6 @@ function oa_loudvoice_admin_message()
         echo '<div class="updated"><p><strong>' . __('Thank you for using the LoudVoice comments platform!', 'oa_loudvoice') . '</strong> ' . sprintf(__('Please <strong><a href="%s">complete the setup</a></strong> to enable the plugin.', 'oa_loudvoice'), 'admin.php?page=oa_loudvoice_settings') . '</p></div>';
     }
 }
-
 
 /**
  * Adds the administration area links
@@ -93,7 +90,6 @@ function oa_loudvoice_admin_menu()
 }
 add_action('admin_menu', 'oa_loudvoice_admin_menu');
 
-
 /**
  * Adds the administration area CSS, called by oa_loudvoice_admin_menu
  */
@@ -113,7 +109,6 @@ function oa_loudvoice_admin_css($hook = '')
         wp_enqueue_style('oa_loudvoice_admin_css');
     }
 }
-
 
 /**
  * Adds the administration area JS, called by oa_loudvoice_admin_menu
@@ -153,7 +148,6 @@ function oa_loudvoice_admin_js($hook)
         ));
     }
 }
-
 
 /**
  * Autodetects the API Connection Handler
@@ -211,7 +205,6 @@ function oa_loudvoice_admin_autodetect_api_connection_handler()
     die();
 }
 add_action('wp_ajax_oa_loudvoice_autodetect_api_connection_handler', 'oa_loudvoice_admin_autodetect_api_connection_handler');
-
 
 /**
  * Checks API Settings through an Ajax Call
@@ -322,7 +315,6 @@ function oa_loudvoice_admin_check_api_settings()
 }
 add_action('wp_ajax_check_api_settings', 'oa_loudvoice_admin_check_api_settings');
 
-
 /**
  * Registers the plugin settings and their sanitization callback
  */
@@ -337,7 +329,7 @@ function oa_loudvoice_admin_register_settings()
 function oa_loudvoice_settings_validate($settings)
 {
     // Import providers
-    GLOBAL $oa_loudvoice_providers;
+    global $oa_loudvoice_providers;
 
     // Settings page?
     $page = (!empty($_POST['page']) ? strtolower(trim($_POST['page'])) : '');
@@ -442,13 +434,14 @@ function oa_loudvoice_settings_validate($settings)
         }
 
         // Done
+
         return $sanitzed_settings;
     }
 
     // Error
+
     return array();
 }
-
 
 /**
  * Displays the settings page
@@ -460,37 +453,37 @@ function oa_loudvoice_display_synchronize()
     <div id="oa_loudvoice">
         <h2>OneAll LoudVoice <?php echo OA_LOUDVOICE_VERSION; ?></h2>
         <h2 class="nav-tab-wrapper">
-            <a class="nav-tab" href="admin.php?page=oa_loudvoice_settings"><?php _e ('Setup', 'oa_loudvoice'); ?></a> <a
-                class="nav-tab nav-tab-active" href="admin.php?page=oa_loudvoice_synchronize"><?php _e ('Synchronize', 'oa_loudvoice'); ?></a>
-            <a class="nav-tab" href="admin.php?page=oa_loudvoice_more"><?php _e ('+More', 'oa_loudvoice'); ?></a>
+            <a class="nav-tab" href="admin.php?page=oa_loudvoice_settings"><?php _e('Setup', 'oa_loudvoice');?></a> <a
+                class="nav-tab nav-tab-active" href="admin.php?page=oa_loudvoice_synchronize"><?php _e('Synchronize', 'oa_loudvoice');?></a>
+            <a class="nav-tab" href="admin.php?page=oa_loudvoice_more"><?php _e('+More', 'oa_loudvoice');?></a>
         </h2>
 				<?php
-    if (!oa_louddvoice_is_setup())
+if (!oa_louddvoice_is_setup())
     {
         ?>
 							<div class="oa_loudvoice_box" id="oa_loudvoice_box_status">
             <div class="oa_loudvoice_box_title">
-									<?php _e ('Setup Required', 'oa_loudvoice'); ?>
+									<?php _e('Setup Required', 'oa_loudvoice');?>
 								</div>
             <p>
-									<?php _e ('The synchronization requires an API connection. Please <a href="admin.php?page=oa_loudvoice_settings">verify your API settings</a> and make sure that they are correct.', 'oa_loudvoice'); ?>
+									<?php _e('The synchronization requires an API connection. Please <a href="admin.php?page=oa_loudvoice_settings">verify your API settings</a> and make sure that they are correct.', 'oa_loudvoice');?>
 								</p>
         </div>
 						<?php
-    }
+}
     else
     {
         ?>
 							<div class="oa_loudvoice_box" id="oa_loudvoice_box_export">
             <div class="oa_loudvoice_box_title">
-									<?php _e ('Export Comments from WordPress to LoudVoice', 'oa_loudvoice'); ?>
+									<?php _e('Export Comments from WordPress to LoudVoice', 'oa_loudvoice');?>
 								</div>
             <div class="oa_loudvoice_box_content">
                 <p>
-										<?php _e ('You should export your comments immediately after having installed LoudVoice so that your users do not need to start their discussions from scratch. The export will in no case alter the comments that you already have in your WordPress database.', 'oa_loudvoice'); ?>
+										<?php _e('You should export your comments immediately after having installed LoudVoice so that your users do not need to start their discussions from scratch. The export will in no case alter the comments that you already have in your WordPress database.', 'oa_loudvoice');?>
 									</p>
                 <p>
-                    <a class="button-secondary oa_loudvoice_sync" id="oa_loudvoice_export" href="#"><strong><?php _e ('Export Comments', 'oa_loudvoice'); ?></strong></a>
+                    <a class="button-secondary oa_loudvoice_sync" id="oa_loudvoice_export" href="#"><strong><?php _e('Export Comments', 'oa_loudvoice');?></strong></a>
                 </p>
             </div>
             <div class="oa_loudvoice_box_footer">
@@ -501,14 +494,14 @@ function oa_loudvoice_display_synchronize()
 
         <div class="oa_loudvoice_box" id="oa_loudvoice_box_import">
             <div class="oa_loudvoice_box_title">
-									<?php _e ('Import Comments from LoudVoice to WordPress', 'oa_loudvoice'); ?>
+									<?php _e('Import Comments from LoudVoice to WordPress', 'oa_loudvoice');?>
 								</div>
             <div class="oa_loudvoice_box_content">
                 <p>
-										<?php _e ('New comments made in LoudVoice are automatically stored in your WordPress database. You can also launch the import manually to make sure that your comments are in sync. If there are comments which are in LoudVoice but not in your blog, then these comments will be added to your database.', 'oa_loudvoice'); ?>
+										<?php _e('New comments made in LoudVoice are automatically stored in your WordPress database. You can also launch the import manually to make sure that your comments are in sync. If there are comments which are in LoudVoice but not in your blog, then these comments will be added to your database.', 'oa_loudvoice');?>
 									</p>
                 <p>
-                    <a class="button-secondary oa_loudvoice_sync" id="oa_loudvoice_import" href="#"><strong><?php _e ('Import Comments', 'oa_loudvoice'); ?></strong></a>
+                    <a class="button-secondary oa_loudvoice_sync" id="oa_loudvoice_import" href="#"><strong><?php _e('Import Comments', 'oa_loudvoice');?></strong></a>
                 </p>
             </div>
             <div class="oa_loudvoice_box_footer">
@@ -517,7 +510,7 @@ function oa_loudvoice_display_synchronize()
             </div>
         </div>
 						<?php
-    }
+}
     ?>
 			</div>
 </div>
@@ -530,109 +523,109 @@ function oa_loudvoice_display_synchronize()
 function oa_loudvoice_display_settings()
 {
     // Import providers
-    GLOBAL $oa_loudvoice_providers;
+    global $oa_loudvoice_providers;
 
     ?>
 <div class="wrap">
     <div id="oa_loudvoice">
         <h2>OneAll LoudVoice <?php echo OA_LOUDVOICE_VERSION; ?></h2>
         <h2 class="nav-tab-wrapper">
-            <a class="nav-tab nav-tab-active" href="admin.php?page=oa_loudvoice_settings"><?php _e ('Setup', 'oa_loudvoice'); ?></a>
-            <a class="nav-tab" href="admin.php?page=oa_loudvoice_synchronize"><?php _e ('Synchronize', 'oa_loudvoice'); ?></a>
-            <a class="nav-tab" href="admin.php?page=oa_loudvoice_more"><?php _e ('+More', 'oa_loudvoice'); ?></a>
+            <a class="nav-tab nav-tab-active" href="admin.php?page=oa_loudvoice_settings"><?php _e('Setup', 'oa_loudvoice');?></a>
+            <a class="nav-tab" href="admin.php?page=oa_loudvoice_synchronize"><?php _e('Synchronize', 'oa_loudvoice');?></a>
+            <a class="nav-tab" href="admin.php?page=oa_loudvoice_more"><?php _e('+More', 'oa_loudvoice');?></a>
         </h2>
 				<?php
-    if (get_option('oa_loudvoice_api_settings_verified') !== '1')
+if (get_option('oa_loudvoice_api_settings_verified') !== '1')
     {
         ?>
 							<p>
-								<?php _e ('Our comments platform has been designed with ease of use in mind and allows your audience to have quick, focused and well thought out interactions surrounding your content. Let your users simply post as guests or connect with 25+ social networks like for example Twitter, Facebook, LinkedIn or Instagram.', 'oa_loudvoice'); ?>
-								<strong><?php _e ('LoudVoice gives your users the voice that they deserve!', 'oa_loudvoice'); ?> </strong>
+								<?php _e('Our comments platform has been designed with ease of use in mind and allows your audience to have quick, focused and well thought out interactions surrounding your content. Let your users simply post as guests or connect with 25+ social networks like for example Twitter, Facebook, LinkedIn or Instagram.', 'oa_loudvoice');?>
+								<strong><?php _e('LoudVoice gives your users the voice that they deserve!', 'oa_loudvoice');?> </strong>
         </p>
         <div class="oa_loudvoice_box" id="oa_loudvoice_box_status">
             <div class="oa_loudvoice_box_title">
-									<?php _e ('Get started within minutes', 'oa_loudvoice'); ?>
+									<?php _e('Get started within minutes', 'oa_loudvoice');?>
 								</div>
             <p>
-									<?php printf (__ ('To be able to use this plugin you first of all need to create a free account at %s and setup a Site.', 'oa_loudvoice'), '<a href="https://app.oneall.com/signup/" target="_blank">http://www.oneall.com</a>'); ?>
-									<?php _e ('Please enter the API settings below after having created your OneAll Site.', 'oa_loudvoice'); ?>
-									<?php _e ("Don't worry it takes only a couple of minutes!", 'oa_loudvoice'); ?>
+									<?php printf(__('To be able to use this plugin you first of all need to create a free account at %s and setup a Site.', 'oa_loudvoice'), '<a href="https://app.oneall.com/signup/" target="_blank">http://www.oneall.com</a>');?>
+									<?php _e('Please enter the API settings below after having created your OneAll Site.', 'oa_loudvoice');?>
+									<?php _e("Don't worry it takes only a couple of minutes!", 'oa_loudvoice');?>
 								</p>
             <p>
-                <a class="button-secondary" href="https://app.oneall.com/signup/" target="_blank"><strong><?php _e ('Setup my free account', 'oa_loudvoice'); ?></strong></a>
+                <a class="button-secondary" href="https://app.oneall.com/signup/" target="_blank"><strong><?php _e('Setup my free account', 'oa_loudvoice');?></strong></a>
             </p>
         </div>
 						<?php
-    }
+}
     else
     {
         ?>
 							<div class="oa_loudvoice_box" id="oa_loudvoice_box_status">
             <div class="oa_loudvoice_box_title">
-									<?php _e ('LoudVoice is setup correctly', 'oa_loudvoice'); ?>
+									<?php _e('LoudVoice is setup correctly', 'oa_loudvoice');?>
 								</div>
             <div class="oa_loudvoice_box_content">
                 <p>
-										<?php _e ('Login to your account to access the comments management system. LoudVoice automatically detects spam so you will not have much to do!', 'oa_loudvoice'); ?>
+										<?php _e('Login to your account to access the comments management system. LoudVoice automatically detects spam so you will not have much to do!', 'oa_loudvoice');?>
 									</p>
                 <p>
-                    <a class="button-secondary" href="https://app.oneall.com/signin/" target="_blank"><strong><?php _e ('Click here to login to your account', 'oa_loudvoice'); ?></strong></a>
+                    <a class="button-secondary" href="https://app.oneall.com/signin/" target="_blank"><strong><?php _e('Click here to login to your account', 'oa_loudvoice');?></strong></a>
                 </p>
             </div>
         </div>
 						<?php
-    }
+}
 
     if (!empty($_REQUEST['settings-updated']) and strtolower($_REQUEST['settings-updated']) == 'true')
     {
         ?>
 			<div class="oa_loudvoice_box" id="oa_loudvoice_box_updated">
 			    <div class="oa_loudvoice_box_content">
-			        <?php _e ('Your modifications have successfully been saved successfully!'); ?>
+			        <?php _e('Your modifications have successfully been saved successfully!');?>
 				</div>
 			</div>
 		<?php
-    }
+}
     ?>
 	<form method="post" action="options.php">
 	    <?php
-	        settings_fields('oa_loudvoice_settings_group');
-	        $settings = get_option('oa_loudvoice_settings');
-	    ?>
+settings_fields('oa_loudvoice_settings_group');
+    $settings = get_option('oa_loudvoice_settings');
+    ?>
 			<table class="form-table oa_loudvoice_table">
                 <tr class="row_head">
                     <th colspan="2">
-                        <?php _e ('Unique Identifier for comments synchronization', 'oa_loudvoice'); ?>
+                        <?php _e('Unique Identifier for comments synchronization', 'oa_loudvoice');?>
 					</th>
                 </tr>
                 <tr class="row_even">
                     <td style="width: 250px">
-                        <label for="oa_loudvoice_settings_api_uniqid"><?php _e ('Identifier', 'oa_loudvoice'); ?>:</label>
+                        <label for="oa_loudvoice_settings_api_uniqid"><?php _e('Identifier', 'oa_loudvoice');?>:</label>
                     </td>
                     <td>
-                        <?php echo (isset ($settings ['oa_loudvoice_uniqid']) ? htmlspecialchars ($settings ['oa_loudvoice_uniqid']) : ''); ?>
+                        <?php echo (isset($settings['oa_loudvoice_uniqid']) ? htmlspecialchars($settings['oa_loudvoice_uniqid']) : ''); ?>
 					</td>
                 </tr>
             </table>
             <table class="form-table oa_loudvoice_table">
                 <tr class="row_head">
                     <th colspan="2">
-                        <?php _e ('API Connection', 'oa_loudvoice'); ?>
+                        <?php _e('API Connection', 'oa_loudvoice');?>
 					</th>
                 </tr>
 				<?php
-				    $api_connection_handler = ((empty($settings['api_connection_handler']) or $settings['api_connection_handler'] != 'fsockopen') ? 'curl' : 'fsockopen');
-				?>
+$api_connection_handler = ((empty($settings['api_connection_handler']) or $settings['api_connection_handler'] != 'fsockopen') ? 'curl' : 'fsockopen');
+    ?>
 				<tr class="row_even">
                     <td rowspan="2" class="row_multi" style="width: 250px">
-                        <label><?php _e ('API Connection Handler', 'oa_loudvoice'); ?>:</label>
+                        <label><?php _e('API Connection Handler', 'oa_loudvoice');?>:</label>
                     </td>
                     <td>
                         <input type="radio" id="oa_loudvoice_api_connection_handler_curl"
                             name="oa_loudvoice_settings[api_connection_handler]" value="curl"
-                            <?php echo (($api_connection_handler <> 'fsockopen') ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_api_connection_handler_curl"><?php _e ('Use PHP CURL to communicate with the API', 'oa_loudvoice'); ?> <strong>(<?php _e ('Recommended', 'oa_loudvoice') ?>)</strong></label><br />
-                        <span class="description"><?php _e ('Using CURL is recommended but it might be disabled on some servers.', 'oa_loudvoice'); ?></span>
+                            <?php echo (($api_connection_handler != 'fsockopen') ? 'checked="checked"' : ''); ?> /> <label
+                            for="oa_loudvoice_api_connection_handler_curl"><?php _e('Use PHP CURL to communicate with the API', 'oa_loudvoice');?> <strong>(<?php _e('Recommended', 'oa_loudvoice')?>)</strong></label><br />
+                        <span class="description"><?php _e('Using CURL is recommended but it might be disabled on some servers.', 'oa_loudvoice');?></span>
                     </td>
                 </tr>
                 <tr class="row_even">
@@ -640,23 +633,23 @@ function oa_loudvoice_display_settings()
                         <input type="radio" id="oa_loudvoice_api_connection_handler_fsockopen"
                             name="oa_loudvoice_settings[api_connection_handler]" value="fsockopen"
                             <?php echo (($api_connection_handler == 'fsockopen') ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_api_connection_handler_fsockopen"><?php _e ('Use PHP FSOCKOPEN to communicate with the API', 'oa_loudvoice'); ?> </label><br />
-                        <span class="description"><?php _e ('Try using FSOCKOPEN if you encounter any problems with CURL.', 'oa_loudvoice'); ?></span>
+                            for="oa_loudvoice_api_connection_handler_fsockopen"><?php _e('Use PHP FSOCKOPEN to communicate with the API', 'oa_loudvoice');?> </label><br />
+                        <span class="description"><?php _e('Try using FSOCKOPEN if you encounter any problems with CURL.', 'oa_loudvoice');?></span>
                     </td>
                 </tr>
 				<?php
-				    $api_connection_use_https = ((!isset($settings['api_connection_use_https']) or $settings['api_connection_use_https'] == '1') ? true : false);
-				?>
+$api_connection_use_https = ((!isset($settings['api_connection_use_https']) or $settings['api_connection_use_https'] == '1') ? true : false);
+    ?>
 				<tr class="row_even">
                     <td rowspan="2" class="row_multi" style="width: 250px">
-                        <label><?php _e ('API Connection Port', 'oa_loudvoice'); ?>:</label>
+                        <label><?php _e('API Connection Port', 'oa_loudvoice');?>:</label>
                     </td>
                     <td>
                         <input type="radio" id="oa_loudvoice_api_connection_handler_use_https_1"
                             name="oa_loudvoice_settings[api_connection_use_https]" value="1"
                             <?php echo ($api_connection_use_https ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_api_connection_handler_use_https_1"><?php _e ('Communication via HTTPS on port 443', 'oa_loudvoice'); ?> <strong>(<?php _e ('Recommended', 'oa_loudvoice') ?>)</strong></label><br />
-                        <span class="description"><?php _e ('Using port 443 is secure but you might need OpenSSL', 'oa_loudvoice'); ?></span>
+                            for="oa_loudvoice_api_connection_handler_use_https_1"><?php _e('Communication via HTTPS on port 443', 'oa_loudvoice');?> <strong>(<?php _e('Recommended', 'oa_loudvoice')?>)</strong></label><br />
+                        <span class="description"><?php _e('Using port 443 is secure but you might need OpenSSL', 'oa_loudvoice');?></span>
                     </td>
                 </tr>
                 <tr class="row_even">
@@ -664,13 +657,13 @@ function oa_loudvoice_display_settings()
                         <input type="radio" id="oa_loudvoice_api_connection_handler_use_https_0"
                             name="oa_loudvoice_settings[api_connection_use_https]" value="0"
                             <?php echo (!$api_connection_use_https ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_api_connection_handler_use_https_0"><?php _e ('Communication via HTTP on port 80', 'oa_loudvoice'); ?> </label><br />
-                        <span class="description"><?php _e ("Using port 80 is a bit faster, doesn't need OpenSSL but is less secure", 'oa_loudvoice'); ?></span>
+                            for="oa_loudvoice_api_connection_handler_use_https_0"><?php _e('Communication via HTTP on port 80', 'oa_loudvoice');?> </label><br />
+                        <span class="description"><?php _e("Using port 80 is a bit faster, doesn't need OpenSSL but is less secure", 'oa_loudvoice');?></span>
                     </td>
                 </tr>
                 <tr class="row_foot">
                     <td>
-                        <a class="button-primary" id="oa_loudvoice_autodetect_api_connection_handler" href="#"><?php _e ('Autodetect API Connection', 'oa_loudvoice'); ?></a>
+                        <a class="button-primary" id="oa_loudvoice_autodetect_api_connection_handler" href="#"><?php _e('Autodetect API Connection', 'oa_loudvoice');?></a>
                     </td>
                     <td>
                         <div id="oa_loudvoice_api_connection_handler_result"></div>
@@ -680,45 +673,45 @@ function oa_loudvoice_display_settings()
             <table class="form-table oa_loudvoice_table">
                 <tr class="row_head">
                     <th>
-								<?php _e ('API Credentials', 'oa_loudvoice'); ?>
+								<?php _e('API Credentials', 'oa_loudvoice');?>
 							</th>
                     <th>
-                        <a href="https://app.oneall.com/applications/" target="_blank"><?php _e ('Click here to create and view your API Credentials', 'oa_loudvoice'); ?></a>
+                        <a href="https://app.oneall.com/applications/" target="_blank"><?php _e('Click here to create and view your API Credentials', 'oa_loudvoice');?></a>
                     </th>
                 </tr>
                 <tr class="row_even">
                     <td style="width: 250px">
-                        <label for="oa_loudvoice_settings_api_subdomain"><?php _e ('API Subdomain', 'oa_loudvoice'); ?>:</label>
+                        <label for="oa_loudvoice_settings_api_subdomain"><?php _e('API Subdomain', 'oa_loudvoice');?>:</label>
                     </td>
                     <td>
                         <input type="text" id="oa_loudvoice_settings_api_subdomain"
                             name="oa_loudvoice_settings[api_subdomain]" size="65"
-                            value="<?php echo (isset ($settings ['api_subdomain']) ? htmlspecialchars ($settings ['api_subdomain']) : ''); ?>" />
+                            value="<?php echo (isset($settings['api_subdomain']) ? htmlspecialchars($settings['api_subdomain']) : ''); ?>" />
                     </td>
                 </tr>
                 <tr class="row_odd">
                     <td style="width: 250px">
                         <label for="oa_loudvoice_settings_api_key">
-								<?php _e ('API Public Key', 'oa_loudvoice'); ?>:</label>
+								<?php _e('API Public Key', 'oa_loudvoice');?>:</label>
                     </td>
                     <td>
                         <input type="text" id="oa_loudvoice_settings_api_key" name="oa_loudvoice_settings[api_key]" size="65"
-                            value="<?php echo (isset ($settings ['api_key']) ? htmlspecialchars ($settings ['api_key']) : ''); ?>" />
+                            value="<?php echo (isset($settings['api_key']) ? htmlspecialchars($settings['api_key']) : ''); ?>" />
                     </td>
                 </tr>
                 <tr class="row_even">
                     <td style="width: 200px">
-                        <label for="oa_loudvoice_settings_api_secret"><?php _e ('API Private Key', 'oa_loudvoice'); ?>:</label>
+                        <label for="oa_loudvoice_settings_api_secret"><?php _e('API Private Key', 'oa_loudvoice');?>:</label>
                     </td>
                     <td>
                         <input type="text" id="oa_loudvoice_settings_api_secret" name="oa_loudvoice_settings[api_secret]"
                             size="65"
-                            value="<?php echo (isset ($settings ['api_secret']) ? htmlspecialchars ($settings ['api_secret']) : ''); ?>" />
+                            value="<?php echo (isset($settings['api_secret']) ? htmlspecialchars($settings['api_secret']) : ''); ?>" />
                     </td>
                 </tr>
                 <tr class="row_foot">
                     <td>
-                        <a class="button-primary" id="oa_loudvoice_test_api_settings" href="#"><?php _e ('Verify API Settings', 'oa_loudvoice'); ?> </a>
+                        <a class="button-primary" id="oa_loudvoice_test_api_settings" href="#"><?php _e('Verify API Settings', 'oa_loudvoice');?> </a>
                     </td>
                     <td>
                         <div id="oa_loudvoice_api_test_result"></div>
@@ -728,121 +721,121 @@ function oa_loudvoice_display_settings()
             <table class="form-table oa_loudvoice_table">
                 <tr class="row_head">
                     <th colspan="2">
-								<?php _e ('Settings', 'oa_loudvoice'); ?>
+								<?php _e('Settings', 'oa_loudvoice');?>
 							</th>
                 </tr>
 				<?php
-				    $disable_seo_comments = (!empty($settings['disable_seo_comments']) ? 1 : 0);
-				?>
+$disable_seo_comments = (!empty($settings['disable_seo_comments']) ? 1 : 0);
+    ?>
 				<tr class="row_even">
                     <td class="row_multi" rowspan="2" style="width: 250px">
                         <label for="oa_loudvoice_disable_seo_comments_0">
-									<?php _e ('Use SEO friendly comments?', 'oa_loudvoice'); ?>
+									<?php _e('Use SEO friendly comments?', 'oa_loudvoice');?>
 								</label>
                     </td>
                     <td>
                         <input type="radio" id="oa_loudvoice_disable_seo_comments_0"
                             name="oa_loudvoice_settings[disable_seo_comments]" value="0"
                             <?php echo ($disable_seo_comments == 0 ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_disable_seo_comments_0"><?php _e ('Enable search engine friendly comments', 'oa_loudvoice'); ?> <strong>(<?php _e ('Recommended', 'oa_loudvoice') ?>)</strong></label><br />
-                        <span class="description"><?php _e ('Displays an optimized version of the comments to search engines and browsers without JavaScript.', 'oa_loudvoice'); ?></span>
+                            for="oa_loudvoice_disable_seo_comments_0"><?php _e('Enable search engine friendly comments', 'oa_loudvoice');?> <strong>(<?php _e('Recommended', 'oa_loudvoice')?>)</strong></label><br />
+                        <span class="description"><?php _e('Displays an optimized version of the comments to search engines and browsers without JavaScript.', 'oa_loudvoice');?></span>
                     </td>
                 </tr>
                 <tr class="row_even">
                     <td class="row_multi">
                         <input type="radio" id="oa_loudvoice_disable_seo_comments_1"
                             name="oa_loudvoice_settings[disable_seo_comments]" value="1"
-                            <?php echo ($disable_seo_comments <> 0 ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_disable_seo_comments_1"><?php _e ('Disable search engine friendly comments', 'oa_loudvoice'); ?></strong></label><br />
-                        <span class="description"><?php _e ('Hides the comments from search engines and browsers without JavaScript.', 'oa_loudvoice'); ?></span>
+                            <?php echo ($disable_seo_comments != 0 ? 'checked="checked"' : ''); ?> /> <label
+                            for="oa_loudvoice_disable_seo_comments_1"><?php _e('Disable search engine friendly comments', 'oa_loudvoice');?></strong></label><br />
+                        <span class="description"><?php _e('Hides the comments from search engines and browsers without JavaScript.', 'oa_loudvoice');?></span>
                     </td>
                 </tr>
 				<?php
-				    $disable_auto_comment_import = (!empty($settings['disable_auto_comment_import']) ? 1 : 0);
-				?>
+$disable_auto_comment_import = (!empty($settings['disable_auto_comment_import']) ? 1 : 0);
+    ?>
 				<tr class="row_odd">
                     <td class="row_multi" rowspan="2" style="width: 250px">
                         <label for="oa_loudvoice_disable_auto_comment_import_0">
-									<?php _e ('Auto-Import New Comments?', 'oa_loudvoice'); ?>
+									<?php _e('Auto-Import New Comments?', 'oa_loudvoice');?>
 								</label>
                     </td>
                     <td>
                         <input type="radio" id="oa_loudvoice_disable_auto_comment_import_0"
                             name="oa_loudvoice_settings[disable_auto_comment_import]" value="0"
                             <?php echo ($disable_auto_comment_import == 0 ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_disable_auto_comment_import_0"><?php _e ('Yes, automatically import new comments', 'oa_loudvoice'); ?> <strong>(<?php _e ('Recommended', 'oa_loudvoice') ?>)</strong></label><br />
-                        <span class="description"><?php _e ('Automatically stores new comments that are made in LoudVoice also in your WordPress database.', 'oa_loudvoice'); ?></span>
+                            for="oa_loudvoice_disable_auto_comment_import_0"><?php _e('Yes, automatically import new comments', 'oa_loudvoice');?> <strong>(<?php _e('Recommended', 'oa_loudvoice')?>)</strong></label><br />
+                        <span class="description"><?php _e('Automatically stores new comments that are made in LoudVoice also in your WordPress database.', 'oa_loudvoice');?></span>
                     </td>
                 </tr>
                 <tr class="row_odd">
                     <td class="row_multi">
                         <input type="radio" id="oa_loudvoice_disable_auto_comment_import_1"
                             name="oa_loudvoice_settings[disable_auto_comment_import]" value="1"
-                            <?php echo ($disable_auto_comment_import <> 0 ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_disable_auto_comment_import_1"><?php _e ('No, I will import the comment on my own', 'oa_loudvoice'); ?></strong></label><br />
-                        <span class="description"><?php _e ('You need to manually run Synchronize\Import to store LoudVoice comments in your database.', 'oa_loudvoice'); ?></span>
+                            <?php echo ($disable_auto_comment_import != 0 ? 'checked="checked"' : ''); ?> /> <label
+                            for="oa_loudvoice_disable_auto_comment_import_1"><?php _e('No, I will import the comment on my own', 'oa_loudvoice');?></strong></label><br />
+                        <span class="description"><?php _e('You need to manually run Synchronize\Import to store LoudVoice comments in your database.', 'oa_loudvoice');?></span>
                     </td>
                 </tr>
 				<?php
-				    $disable_author_sessions = (!empty($settings['disable_author_sessions']) ? 1 : 0);
-				?>
+$disable_author_sessions = (!empty($settings['disable_author_sessions']) ? 1 : 0);
+    ?>
 				<tr class="row_even">
                     <td class="row_multi" rowspan="2" style="width: 250px">
                         <label for="oa_loudvoice_disable_author_sessions_0">
-									<?php _e ('Connect WordPress users to the LoudVoice comments platform?', 'oa_loudvoice'); ?>
+									<?php _e('Connect WordPress users to the LoudVoice comments platform?', 'oa_loudvoice');?>
 								</label>
                     </td>
                     <td>
                         <input type="radio" id="oa_loudvoice_disable_author_sessions_0"
                             name="oa_loudvoice_settings[disable_author_sessions]" value="0"
                             <?php echo ($disable_author_sessions == 0 ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_disable_author_sessions_0"><?php _e ('Yes, connect WordPress users accounts to LoudVoice', 'oa_loudvoice'); ?> <strong>(<?php _e ('Recommended', 'oa_loudvoice') ?>)</strong></label><br />
-                        <span class="description"><?php _e ('Existing users of your blog can use their WordPress accounts to post comments with LoudVoice.', 'oa_loudvoice'); ?></span>
+                            for="oa_loudvoice_disable_author_sessions_0"><?php _e('Yes, connect WordPress users accounts to LoudVoice', 'oa_loudvoice');?> <strong>(<?php _e('Recommended', 'oa_loudvoice')?>)</strong></label><br />
+                        <span class="description"><?php _e('Existing users of your blog can use their WordPress accounts to post comments with LoudVoice.', 'oa_loudvoice');?></span>
                     </td>
                 </tr>
                 <tr class="row_even">
                     <td class="row_multi">
                         <input type="radio" id="oa_loudvoice_disable_author_sessions_1"
                             name="oa_loudvoice_settings[disable_author_sessions]" value="1"
-                            <?php echo ($disable_author_sessions <> 0 ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_disable_author_sessions_1"><?php _e ('No, do not connect WordPress users to LoudVoice', 'oa_loudvoice'); ?></strong></label><br />
-                        <span class="description"><?php _e ('Existing users can only post as guests or with their social network accounts.', 'oa_loudvoice'); ?></span>
+                            <?php echo ($disable_author_sessions != 0 ? 'checked="checked"' : ''); ?> /> <label
+                            for="oa_loudvoice_disable_author_sessions_1"><?php _e('No, do not connect WordPress users to LoudVoice', 'oa_loudvoice');?></strong></label><br />
+                        <span class="description"><?php _e('Existing users can only post as guests or with their social network accounts.', 'oa_loudvoice');?></span>
                     </td>
                 </tr>
             </table>
             <table class="form-table oa_loudvoice_table">
                 <tr class="row_head">
                     <th colspan="2">
-                        <?php _e ('Enable the social networks of your choice to allow users to comment using their social media accounts.', 'oa_loudvoice'); ?>
+                        <?php _e('Enable the social networks of your choice to allow users to comment using their social media accounts.', 'oa_loudvoice');?>
 					</th>
                 </tr>
 				<?php
-                    // Sort
-                    asort($oa_loudvoice_providers);
+// Sort
+    asort($oa_loudvoice_providers);
 
-                    // Display
-                    $i = 0;
-                    foreach ($oa_loudvoice_providers as $key => $name)
-                    {
-                        ?>
+    // Display
+    $i = 0;
+    foreach ($oa_loudvoice_providers as $key => $name)
+    {
+        ?>
                 			<tr class="row_provider <?php echo ((($i++) % 2) == 0) ? 'row_even' : 'row_odd' ?>">
                 			    <td class="cell_provider_icon">
                 			        <label for="oneall_loudvoice_provider_<?php echo $key; ?>">
-                			            <span class="oa_loudvoice_provider oa_loudvoice_provider_<?php echo $key; ?>" title="<?php echo htmlspecialchars ($name); ?>"><?php echo htmlspecialchars ($name); ?> </span>
+                			            <span class="oa_loudvoice_provider oa_loudvoice_provider_<?php echo $key; ?>" title="<?php echo htmlspecialchars($name); ?>"><?php echo htmlspecialchars($name); ?> </span>
                                     </label>
                                 </td>
                                 <td class="cell_provider_label">
-                                  <input type="checkbox" id="oneall_loudvoice_provider_<?php echo $key; ?>" name="oa_loudvoice_settings[providers][<?php echo $key; ?>]" value="1" <?php checked ('1', ((isset ($settings ['providers']) && !empty ($settings ['providers'] [$key])) ? $settings ['providers'] [$key] : 0)); ?> />
-                                  <label for="oneall_loudvoice_provider_<?php echo $key; ?>"><?php echo htmlspecialchars ($name); ?> </label>
+                                  <input type="checkbox" id="oneall_loudvoice_provider_<?php echo $key; ?>" name="oa_loudvoice_settings[providers][<?php echo $key; ?>]" value="1" <?php checked('1', ((isset($settings['providers']) && !empty($settings['providers'][$key])) ? $settings['providers'][$key] : 0));?> />
+                                  <label for="oneall_loudvoice_provider_<?php echo $key; ?>"><?php echo htmlspecialchars($name); ?> </label>
                                 </td>
                             </tr>
                 		<?php
-                    }
-                ?>
+}
+    ?>
 			</table>
             <p class="submit">
                 <input type="hidden" name="page" value="settings" /> <input type="submit" class="button-primary"
-                    value="<?php _e ('Save Changes', 'oa_loudvoice') ?>" />
+                    value="<?php _e('Save Changes', 'oa_loudvoice')?>" />
             </p>
         </form>
     </div>
@@ -863,37 +856,37 @@ function oa_display_loudvoice_more()
         <div id="oa_loudvoice" class="oa_loudvoice_more">
             <h2>OneAll LoudVoice <?php echo OA_LOUDVOICE_VERSION; ?></h2>
             <h2 class="nav-tab-wrapper">
-                <a class="nav-tab" href="admin.php?page=oa_loudvoice_settings"><?php _e ('Setup', 'oa_loudvoice'); ?></a> <a
-                    class="nav-tab" href="admin.php?page=oa_loudvoice_synchronize"><?php _e ('Synchronize', 'oa_loudvoice'); ?></a>
-                <a class="nav-tab nav-tab-active" href="admin.php?page=oa_loudvoice_more"><?php _e ('+More', 'oa_loudvoice'); ?></a>
+                <a class="nav-tab" href="admin.php?page=oa_loudvoice_settings"><?php _e('Setup', 'oa_loudvoice');?></a> <a
+                    class="nav-tab" href="admin.php?page=oa_loudvoice_synchronize"><?php _e('Synchronize', 'oa_loudvoice');?></a>
+                <a class="nav-tab nav-tab-active" href="admin.php?page=oa_loudvoice_more"><?php _e('+More', 'oa_loudvoice');?></a>
             </h2>
             <p></p>
             <div class="oa_loudvoice_box" id="oa_loudvoice_box_help">
                 <div class="oa_loudvoice_box_title">
-    				<?php _e ('Help, Updates &amp; Documentation', 'oa_loudvoice'); ?>
+    				<?php _e('Help, Updates &amp; Documentation', 'oa_loudvoice');?>
     			</div>
                 <ul>
-                    <li><?php printf (__ ('<a target="_blank" href="%s">Follow us on Twitter</a> to stay informed about updates', 'oa_loudvoice'), 'http://www.twitter.com/oneall'); ?>;</li>
-                    <li><?php printf (__ ('<a target="_blank" href="%s">Read the online documentation</a> for more information about this plugin', 'oa_loudvoice'), 'http://docs.oneall.com/plugins/guide/social-login-wordpress/'); ?>;</li>
-                    <li><?php printf (__ ('<a target="_blank" href="%s">Contact us</a> if you have feedback or need assistance', 'oa_loudvoice'), 'http://www.oneall.com/company/contact-us/'); ?>.
-                    <li><?php printf (__ ('We also have <a target="_blank" href="%s">turnkey plugins</a> for Drupal, PrestaShop, Joomla, phpBB andy many others ...', 'oa_loudvoice'), 'http://docs.oneall.com/plugins/'); ?>.</li>
+                    <li><?php printf(__('<a target="_blank" href="%s">Follow us on Twitter</a> to stay informed about updates', 'oa_loudvoice'), 'http://www.twitter.com/oneall');?>;</li>
+                    <li><?php printf(__('<a target="_blank" href="%s">Read the online documentation</a> for more information about this plugin', 'oa_loudvoice'), 'http://docs.oneall.com/plugins/guide/social-login-wordpress/');?>;</li>
+                    <li><?php printf(__('<a target="_blank" href="%s">Contact us</a> if you have feedback or need assistance', 'oa_loudvoice'), 'http://www.oneall.com/company/contact-us/');?>.
+                    <li><?php printf(__('We also have <a target="_blank" href="%s">turnkey plugins</a> for Drupal, PrestaShop, Joomla, phpBB andy many others ...', 'oa_loudvoice'), 'http://docs.oneall.com/plugins/');?>.</li>
                 </ul>
             </div>
             <table class="form-table oa_loudvoice_table">
                 <tr class="row_head">
                     <th>
-    					<?php _e ('Discover other plugins from OneAll', 'oa_loudvoice'); ?>
+    					<?php _e('Discover other plugins from OneAll', 'oa_loudvoice');?>
     				</th>
                 </tr>
                 <tr class="row_even">
                     <td class="col_unpadded">
-                        <a href="<?php echo $plugin_url; ?>" class="social-sharing" title="<?php _e ('Get it now!', 'oa_loudvoice'); ?>"></a>
+                        <a href="<?php echo $plugin_url; ?>" class="social-sharing" title="<?php _e('Get it now!', 'oa_loudvoice');?>"></a>
                     </td>
                 </tr>
                 <tr class="row_even">
                     <td>
-    					<?php _e ('Easy to use and 100% FREE Social Sharing Icons & Share Buttons for WordPress. Allow your users to share posts and pages to 30+ Social Networks. Integrates with Social Login. No additional setup required.', 'oa_loudvoice'); ?>
-    					<strong><a href="<?php echo $plugin_url; ?>"><?php _e ('Click For More Information', 'oa_loudvoice'); ?></a></strong>
+    					<?php _e('Easy to use and 100% FREE Social Sharing Icons & Share Buttons for WordPress. Allow your users to share posts and pages to 30+ Social Networks. Integrates with Social Login. No additional setup required.', 'oa_loudvoice');?>
+    					<strong><a href="<?php echo $plugin_url; ?>"><?php _e('Click For More Information', 'oa_loudvoice');?></a></strong>
                     </td>
                 </tr>
             </table>
@@ -901,4 +894,3 @@ function oa_display_loudvoice_more()
     </div>
     <?php
 }
-
