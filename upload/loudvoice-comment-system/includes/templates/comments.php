@@ -188,9 +188,13 @@ $page_url = oa_loudvoice_get_link_for_post ($post);
 		_oneall.push(['loudvoice', 'set_providers', ['<?php echo implode ("','", $providers);?>']]);
 		_oneall.push(['loudvoice', 'set_page', '<?php echo $page_title;?>', '<?php echo $page_url;?>']);
 		_oneall.push(['loudvoice', 'set_reference', '<?php echo $page_reference; ?>']);
-		_oneall.push(['loudvoice', 'set_author_session_token', '<?php echo strval ($author_session_token); ?>']);
 		_oneall.push(['loudvoice', 'set_event', 'on_comment_added', function(data) {oa_loudvoice_import_comment ('<?php echo $post->ID; ?>', data);}]);
-		_oneall.push(['loudvoice', 'do_render_ui', '<?php echo $comments_container_id; ?>']);
-
+        <?php if (is_user_logged_in ()): ?>
+        _oneall.push(['loudvoice', 'set_author_session_token', '<?php echo strval($author_session_token); ?>']);
+        _oneall.push(['loudvoice', 'set_event', 'on_logout_end_success', function(){
+            window.location.replace('<?php echo html_entity_decode(wp_logout_url()); ?>');
+        }]);
+        _oneall.push(['loudvoice', 'do_render_ui', '<?php echo $comments_container_id; ?>']);
+        <?php endif; ?>
 	</script>
 </div>
