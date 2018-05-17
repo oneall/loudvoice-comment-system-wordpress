@@ -148,7 +148,7 @@ function oa_loudvoice_create_author_session($user_login, $user)
                             'author_session' => array(
                                 'author' => array(
                                     'author_reference' => oa_loudvoice_get_author_reference_for_user($user),
-                                    'allow_create_author_reference' => true,
+                                    'allow_create_new' => true,
                                     'name' => $user->user_login,
                                     'email' => (!empty($user->user_email) ? $user->user_email : null),
                                     'website_url' => (!empty($user->user_url) ? $user->user_url : null),
@@ -200,28 +200,30 @@ function oa_loudvoice_import_comment_ajax()
         // We need both arguments
         if (!empty($postid) && !empty($comment_token))
         {
-            // Pull Comment
+            // Pull comment.
             $api_result = oa_loudvoice_do_api_request_endpoint('/loudvoice/comments/' . $comment_token . '.json');
 
-            // Check result
-            if (is_object($api_result) and property_exists($api_result, 'http_code'))
+            // Check result.
+            if (is_object($api_result) && property_exists($api_result, 'http_code'))
             {
                 if ($api_result->http_code == 200)
                 {
-                    // Decode result
+                    // Decode result.
                     $json = @json_decode($api_result->http_data);
 
-                    // Make sure it's valid
+                    // Make sure it's valid.
                     if (is_object($json) and isset($json->response->result->data->comment))
                     {
-                        // Loudvoice Objects
-                        $discussion = $json->response->result->data->discussion;
+                        // LoudVoice Comment.
                         $comment = $json->response->result->data->comment;
 
-                        // Validate the references before doing anything else
+                        // LoudVoice Comment Discussion.
+                        $discussion = $comment->discussion;
+
+                        // Validate the references before doing anything else.
                         if ($discussion->discussion_reference == oa_loudvoice_get_reference_for_post($postid))
                         {
-                            // Make sure the comment has not yet been synchronized
+                            // Make sure the comment has not yet been synchronized.
                             if (($commentid = oa_loudvoice_get_commentid_for_token($comment_token)) == false)
                             {
                                 // Prepare WordPress Comment
@@ -234,58 +236,60 @@ function oa_loudvoice_import_comment_ajax()
                                     'comment_parent' => (!empty($comment->parent_comment_token) ? oa_loudvoice_get_commentid_for_token($comment->parent_comment_token) : 0),
                                     'user_id' => 0,
                                     'comment_author_IP' => $comment->ip_address,
-                                    'comment_agent' => 'Loudvoice/2.1.0 WordPress',
+                                    'comment_agent' => OA_LOUDVOICE_AGENT,
                                     'comment_date_gmt' => date('Y-m-d G:i:s', strtotime($comment->date_creation)),
                                     'comment_approved' => oa_loudvoice_wrap_status_for_lv_comment($comment, 'comment_approved'));
 
-                                // Filter
+                                // Apply filters.
                                 $data = wp_filter_comment($data);
 
-                                // Insert WordPress Comment
+                                // Insert WordPress comment.
                                 $commentid = wp_insert_comment($data);
 
-                                // Update Meta
+                                // Update comment meta.
                                 oa_loudvoice_set_token_for_comment($commentid, $comment_token);
                                 oa_loudvoice_set_time_sync_for_comment($commentid, time());
 
-                                // Synchronized
+                                // Synchronized!
                                 $status_message = 'success_comment_synchronized';
                             }
-                            // Already Synchronized
+                            // Already synchronized.
                             else
                             {
                                 $status_message = 'success_comment_already_synchronized';
                             }
                         }
-                        // Error
+                        // Invalid reference.
                         else
                         {
                             $status_message = 'error_invalid_post_reference';
                         }
                     }
-                    // Error
+                    // Invalid data format.
                     else
                     {
                         $status_message = 'error_invalid_data_format';
                     }
                 }
+                // Unknown HTTP result code.
                 else
                 {
                     $status_message = 'error_invalid_result_code';
                 }
             }
+            // Error during the communication.
             else
             {
                 $status_message = 'error_communication_issue';
             }
         }
-        // Error
+        // Invalid arguments.
         else
         {
             $status_message = 'error_invalid_arguments';
         }
     }
-    // Error
+    // LoudVoice is not ready.
     else
     {
         $status_message = 'error_loudvoice_not_setup';

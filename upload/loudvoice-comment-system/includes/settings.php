@@ -31,7 +31,7 @@ define('OA_LOUDVOICE_AUTHOR_SESSION_EXPIRE_KEY', '_oa_loudvoice_author_session_e
  * Other Settings
  */
 define('OA_LOUDVOICE_ALLOWED_HTML_TAGS', '<b><u><i><h1><h2><h3><code><blockquote><br><hr>');
-define('OA_LOUDVOICE_VERSION', '2.1.0');
+define('OA_LOUDVOICE_VERSION', '2.1.1');
 define('OA_LOUDVOICE_AGENT', 'LoudVoice/' . OA_LOUDVOICE_VERSION . ' WordPress/' . get_bloginfo('version') . ' (+http://www.oneall.com/)');
 define('OA_LOUDVOICE_API_BASE', '.api.oneall.com');
 

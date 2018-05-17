@@ -576,22 +576,22 @@ if (get_option('oa_loudvoice_api_settings_verified') !== '1')
 						<?php
 }
 
-    if (!empty($_REQUEST['settings-updated']) and strtolower($_REQUEST['settings-updated']) == 'true')
-    {
-        ?>
-			<div class="oa_loudvoice_box" id="oa_loudvoice_box_updated">
-			    <div class="oa_loudvoice_box_content">
-			        <?php _e('Your modifications have successfully been saved successfully!');?>
-				</div>
-			</div>
-		<?php
-}
+        if (!empty($_REQUEST['settings-updated']) and strtolower($_REQUEST['settings-updated']) == 'true')
+        {
+            ?>
+    			<div class="oa_loudvoice_box" id="oa_loudvoice_box_updated">
+    			    <div class="oa_loudvoice_box_content">
+    			        <?php _e('Your modifications have successfully been saved successfully!');?>
+    				</div>
+    			</div>
+    		<?php
+        }
     ?>
 	<form method="post" action="options.php">
-	    <?php
-settings_fields('oa_loudvoice_settings_group');
-    $settings = get_option('oa_loudvoice_settings');
-    ?>
+	        <?php
+	           settings_fields('oa_loudvoice_settings_group');
+	           $settings = get_option('oa_loudvoice_settings');
+	        ?>
 			<table class="form-table oa_loudvoice_table">
                 <tr class="row_head">
                     <th colspan="2">
@@ -614,50 +614,52 @@ settings_fields('oa_loudvoice_settings_group');
 					</th>
                 </tr>
 				<?php
-$api_connection_handler = ((empty($settings['api_connection_handler']) or $settings['api_connection_handler'] != 'fsockopen') ? 'curl' : 'fsockopen');
-    ?>
+				    $api_connection_handler = ((empty($settings['api_connection_handler']) or $settings['api_connection_handler'] != 'fsockopen') ? 'curl' : 'fsockopen');
+				?>
 				<tr class="row_even">
                     <td rowspan="2" class="row_multi" style="width: 250px">
                         <label><?php _e('API Connection Handler', 'oa_loudvoice');?>:</label>
                     </td>
                     <td>
-                        <input type="radio" id="oa_loudvoice_api_connection_handler_curl"
-                            name="oa_loudvoice_settings[api_connection_handler]" value="curl"
-                            <?php echo (($api_connection_handler != 'fsockopen') ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_api_connection_handler_curl"><?php _e('Use PHP CURL to communicate with the API', 'oa_loudvoice');?> <strong>(<?php _e('Recommended', 'oa_loudvoice')?>)</strong></label><br />
+                        <input type="radio" id="oa_loudvoice_api_connection_handler_curl" name="oa_loudvoice_settings[api_connection_handler]" value="curl" <?php echo (($api_connection_handler != 'fsockopen') ? 'checked="checked"' : ''); ?> />
+                        <label for="oa_loudvoice_api_connection_handler_curl">
+                            <?php _e('Use PHP CURL to communicate with the API', 'oa_loudvoice');?> <strong>(<?php _e('Recommended', 'oa_loudvoice')?>)</strong>
+                        </label><br />
                         <span class="description"><?php _e('Using CURL is recommended but it might be disabled on some servers.', 'oa_loudvoice');?></span>
                     </td>
                 </tr>
                 <tr class="row_even">
                     <td>
-                        <input type="radio" id="oa_loudvoice_api_connection_handler_fsockopen"
-                            name="oa_loudvoice_settings[api_connection_handler]" value="fsockopen"
-                            <?php echo (($api_connection_handler == 'fsockopen') ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_api_connection_handler_fsockopen"><?php _e('Use PHP FSOCKOPEN to communicate with the API', 'oa_loudvoice');?> </label><br />
+                        <input type="radio" id="oa_loudvoice_api_connection_handler_fsockopen" name="oa_loudvoice_settings[api_connection_handler]" value="fsockopen" <?php echo (($api_connection_handler == 'fsockopen') ? 'checked="checked"' : ''); ?> />
+                        <label for="oa_loudvoice_api_connection_handler_fsockopen">
+                            <?php _e('Use PHP FSOCKOPEN to communicate with the API', 'oa_loudvoice');?>
+                        </label><br />
                         <span class="description"><?php _e('Try using FSOCKOPEN if you encounter any problems with CURL.', 'oa_loudvoice');?></span>
                     </td>
                 </tr>
 				<?php
-$api_connection_use_https = ((!isset($settings['api_connection_use_https']) or $settings['api_connection_use_https'] == '1') ? true : false);
-    ?>
+				    $api_connection_use_https = ((!isset($settings['api_connection_use_https']) or $settings['api_connection_use_https'] == '1') ? true : false);
+				?>
 				<tr class="row_even">
                     <td rowspan="2" class="row_multi" style="width: 250px">
-                        <label><?php _e('API Connection Port', 'oa_loudvoice');?>:</label>
+                        <label>
+                            <?php _e('API Connection Port', 'oa_loudvoice');?>:
+                         </label>
                     </td>
                     <td>
-                        <input type="radio" id="oa_loudvoice_api_connection_handler_use_https_1"
-                            name="oa_loudvoice_settings[api_connection_use_https]" value="1"
-                            <?php echo ($api_connection_use_https ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_api_connection_handler_use_https_1"><?php _e('Communication via HTTPS on port 443', 'oa_loudvoice');?> <strong>(<?php _e('Recommended', 'oa_loudvoice')?>)</strong></label><br />
+                        <input type="radio" id="oa_loudvoice_api_connection_handler_use_https_1" name="oa_loudvoice_settings[api_connection_use_https]" value="1" <?php echo ($api_connection_use_https ? 'checked="checked"' : ''); ?> />
+                        <label for="oa_loudvoice_api_connection_handler_use_https_1">
+                            <?php _e('Communication via HTTPS on port 443', 'oa_loudvoice');?> <strong>(<?php _e('Recommended', 'oa_loudvoice')?>)</strong>
+                        </label><br />
                         <span class="description"><?php _e('Using port 443 is secure but you might need OpenSSL', 'oa_loudvoice');?></span>
                     </td>
                 </tr>
                 <tr class="row_even">
                     <td>
-                        <input type="radio" id="oa_loudvoice_api_connection_handler_use_https_0"
-                            name="oa_loudvoice_settings[api_connection_use_https]" value="0"
-                            <?php echo (!$api_connection_use_https ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_api_connection_handler_use_https_0"><?php _e('Communication via HTTP on port 80', 'oa_loudvoice');?> </label><br />
+                        <input type="radio" id="oa_loudvoice_api_connection_handler_use_https_0" name="oa_loudvoice_settings[api_connection_use_https]" value="0" <?php echo (!$api_connection_use_https ? 'checked="checked"' : ''); ?> />
+                        <label for="oa_loudvoice_api_connection_handler_use_https_0">
+                            <?php _e('Communication via HTTP on port 80', 'oa_loudvoice');?>
+                        </label><br />
                         <span class="description"><?php _e("Using port 80 is a bit faster, doesn't need OpenSSL but is less secure", 'oa_loudvoice');?></span>
                     </td>
                 </tr>
@@ -673,40 +675,40 @@ $api_connection_use_https = ((!isset($settings['api_connection_use_https']) or $
             <table class="form-table oa_loudvoice_table">
                 <tr class="row_head">
                     <th>
-								<?php _e('API Credentials', 'oa_loudvoice');?>
-							</th>
+						<?php _e('API Credentials', 'oa_loudvoice');?>
+					</th>
                     <th>
                         <a href="https://app.oneall.com/applications/" target="_blank"><?php _e('Click here to create and view your API Credentials', 'oa_loudvoice');?></a>
                     </th>
                 </tr>
                 <tr class="row_even">
                     <td style="width: 250px">
-                        <label for="oa_loudvoice_settings_api_subdomain"><?php _e('API Subdomain', 'oa_loudvoice');?>:</label>
+                        <label for="oa_loudvoice_settings_api_subdomain">
+                            <?php _e('API Subdomain', 'oa_loudvoice');?>:
+                         </label>
                     </td>
                     <td>
-                        <input type="text" id="oa_loudvoice_settings_api_subdomain"
-                            name="oa_loudvoice_settings[api_subdomain]" size="65"
-                            value="<?php echo (isset($settings['api_subdomain']) ? htmlspecialchars($settings['api_subdomain']) : ''); ?>" />
+                        <input type="text" id="oa_loudvoice_settings_api_subdomain" name="oa_loudvoice_settings[api_subdomain]" size="65" value="<?php echo (isset($settings['api_subdomain']) ? htmlspecialchars($settings['api_subdomain']) : ''); ?>" />
                     </td>
                 </tr>
                 <tr class="row_odd">
                     <td style="width: 250px">
                         <label for="oa_loudvoice_settings_api_key">
-								<?php _e('API Public Key', 'oa_loudvoice');?>:</label>
+							<?php _e('API Public Key', 'oa_loudvoice');?>:
+						</label>
                     </td>
                     <td>
-                        <input type="text" id="oa_loudvoice_settings_api_key" name="oa_loudvoice_settings[api_key]" size="65"
-                            value="<?php echo (isset($settings['api_key']) ? htmlspecialchars($settings['api_key']) : ''); ?>" />
+                        <input type="text" id="oa_loudvoice_settings_api_key" name="oa_loudvoice_settings[api_key]" size="65" value="<?php echo (isset($settings['api_key']) ? htmlspecialchars($settings['api_key']) : ''); ?>" />
                     </td>
                 </tr>
                 <tr class="row_even">
                     <td style="width: 200px">
-                        <label for="oa_loudvoice_settings_api_secret"><?php _e('API Private Key', 'oa_loudvoice');?>:</label>
+                        <label for="oa_loudvoice_settings_api_secret">
+                            <?php _e('API Private Key', 'oa_loudvoice');?>:
+                         </label>
                     </td>
                     <td>
-                        <input type="text" id="oa_loudvoice_settings_api_secret" name="oa_loudvoice_settings[api_secret]"
-                            size="65"
-                            value="<?php echo (isset($settings['api_secret']) ? htmlspecialchars($settings['api_secret']) : ''); ?>" />
+                        <input type="text" id="oa_loudvoice_settings_api_secret" name="oa_loudvoice_settings[api_secret]" size="65" value="<?php echo (isset($settings['api_secret']) ? htmlspecialchars($settings['api_secret']) : ''); ?>" />
                     </td>
                 </tr>
                 <tr class="row_foot">
@@ -721,84 +723,84 @@ $api_connection_use_https = ((!isset($settings['api_connection_use_https']) or $
             <table class="form-table oa_loudvoice_table">
                 <tr class="row_head">
                     <th colspan="2">
-								<?php _e('Settings', 'oa_loudvoice');?>
-							</th>
+						<?php _e('Settings', 'oa_loudvoice');?>
+					</th>
                 </tr>
 				<?php
-$disable_seo_comments = (!empty($settings['disable_seo_comments']) ? 1 : 0);
-    ?>
+				    $disable_seo_comments = (!empty($settings['disable_seo_comments']) ? 1 : 0);
+				?>
 				<tr class="row_even">
                     <td class="row_multi" rowspan="2" style="width: 250px">
                         <label for="oa_loudvoice_disable_seo_comments_0">
-									<?php _e('Use SEO friendly comments?', 'oa_loudvoice');?>
-								</label>
+							<?php _e('Use SEO friendly comments?', 'oa_loudvoice');?>
+						</label>
                     </td>
                     <td>
-                        <input type="radio" id="oa_loudvoice_disable_seo_comments_0"
-                            name="oa_loudvoice_settings[disable_seo_comments]" value="0"
-                            <?php echo ($disable_seo_comments == 0 ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_disable_seo_comments_0"><?php _e('Enable search engine friendly comments', 'oa_loudvoice');?> <strong>(<?php _e('Recommended', 'oa_loudvoice')?>)</strong></label><br />
+                        <input type="radio" id="oa_loudvoice_disable_seo_comments_0" name="oa_loudvoice_settings[disable_seo_comments]" value="0" <?php echo ($disable_seo_comments == 0 ? 'checked="checked"' : ''); ?> />
+                        <label for="oa_loudvoice_disable_seo_comments_0"><?php _e('Enable search engine friendly comments', 'oa_loudvoice');?>
+                            <strong>(<?php _e('Recommended', 'oa_loudvoice')?>)</strong>
+                        </label><br />
                         <span class="description"><?php _e('Displays an optimized version of the comments to search engines and browsers without JavaScript.', 'oa_loudvoice');?></span>
                     </td>
                 </tr>
                 <tr class="row_even">
                     <td class="row_multi">
-                        <input type="radio" id="oa_loudvoice_disable_seo_comments_1"
-                            name="oa_loudvoice_settings[disable_seo_comments]" value="1"
-                            <?php echo ($disable_seo_comments != 0 ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_disable_seo_comments_1"><?php _e('Disable search engine friendly comments', 'oa_loudvoice');?></strong></label><br />
+                        <input type="radio" id="oa_loudvoice_disable_seo_comments_1" name="oa_loudvoice_settings[disable_seo_comments]" value="1" <?php echo ($disable_seo_comments != 0 ? 'checked="checked"' : ''); ?> />
+                        <label for="oa_loudvoice_disable_seo_comments_1">
+                            <?php _e('Disable search engine friendly comments', 'oa_loudvoice');?>
+                         </label><br />
                         <span class="description"><?php _e('Hides the comments from search engines and browsers without JavaScript.', 'oa_loudvoice');?></span>
                     </td>
                 </tr>
 				<?php
-$disable_auto_comment_import = (!empty($settings['disable_auto_comment_import']) ? 1 : 0);
-    ?>
+				    $disable_auto_comment_import = (!empty($settings['disable_auto_comment_import']) ? 1 : 0);
+				?>
 				<tr class="row_odd">
                     <td class="row_multi" rowspan="2" style="width: 250px">
                         <label for="oa_loudvoice_disable_auto_comment_import_0">
-									<?php _e('Auto-Import New Comments?', 'oa_loudvoice');?>
-								</label>
+					       <?php _e('Auto-Import New Comments?', 'oa_loudvoice');?>
+						</label>
                     </td>
                     <td>
-                        <input type="radio" id="oa_loudvoice_disable_auto_comment_import_0"
-                            name="oa_loudvoice_settings[disable_auto_comment_import]" value="0"
-                            <?php echo ($disable_auto_comment_import == 0 ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_disable_auto_comment_import_0"><?php _e('Yes, automatically import new comments', 'oa_loudvoice');?> <strong>(<?php _e('Recommended', 'oa_loudvoice')?>)</strong></label><br />
+                        <input type="radio" id="oa_loudvoice_disable_auto_comment_import_0" name="oa_loudvoice_settings[disable_auto_comment_import]" value="0" <?php echo ($disable_auto_comment_import == 0 ? 'checked="checked"' : ''); ?> />
+                        <label for="oa_loudvoice_disable_auto_comment_import_0">
+                            <?php _e('Yes, automatically import new comments', 'oa_loudvoice');?> <strong>(<?php _e('Recommended', 'oa_loudvoice')?>)</strong>
+                        </label><br />
                         <span class="description"><?php _e('Automatically stores new comments that are made in LoudVoice also in your WordPress database.', 'oa_loudvoice');?></span>
                     </td>
                 </tr>
                 <tr class="row_odd">
                     <td class="row_multi">
-                        <input type="radio" id="oa_loudvoice_disable_auto_comment_import_1"
-                            name="oa_loudvoice_settings[disable_auto_comment_import]" value="1"
-                            <?php echo ($disable_auto_comment_import != 0 ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_disable_auto_comment_import_1"><?php _e('No, I will import the comment on my own', 'oa_loudvoice');?></strong></label><br />
+                        <input type="radio" id="oa_loudvoice_disable_auto_comment_import_1" name="oa_loudvoice_settings[disable_auto_comment_import]" value="1" <?php echo ($disable_auto_comment_import != 0 ? 'checked="checked"' : ''); ?> />
+                        <label for="oa_loudvoice_disable_auto_comment_import_1">
+                            <?php _e('No, I will import the comment on my own', 'oa_loudvoice');?>
+                         </label><br />
                         <span class="description"><?php _e('You need to manually run Synchronize\Import to store LoudVoice comments in your database.', 'oa_loudvoice');?></span>
                     </td>
                 </tr>
 				<?php
-$disable_author_sessions = (!empty($settings['disable_author_sessions']) ? 1 : 0);
-    ?>
+				    $disable_author_sessions = (!empty($settings['disable_author_sessions']) ? 1 : 0);
+				?>
 				<tr class="row_even">
                     <td class="row_multi" rowspan="2" style="width: 250px">
                         <label for="oa_loudvoice_disable_author_sessions_0">
-									<?php _e('Connect WordPress users to the LoudVoice comments platform?', 'oa_loudvoice');?>
-								</label>
+						   <?php _e('Connect WordPress users to the LoudVoice comments platform?', 'oa_loudvoice');?>
+					     </label>
                     </td>
                     <td>
-                        <input type="radio" id="oa_loudvoice_disable_author_sessions_0"
-                            name="oa_loudvoice_settings[disable_author_sessions]" value="0"
-                            <?php echo ($disable_author_sessions == 0 ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_disable_author_sessions_0"><?php _e('Yes, connect WordPress users accounts to LoudVoice', 'oa_loudvoice');?> <strong>(<?php _e('Recommended', 'oa_loudvoice')?>)</strong></label><br />
+                        <input type="radio" id="oa_loudvoice_disable_author_sessions_0" name="oa_loudvoice_settings[disable_author_sessions]" value="0" <?php echo ($disable_author_sessions == 0 ? 'checked="checked"' : ''); ?> />
+                        <label for="oa_loudvoice_disable_author_sessions_0">
+                            <?php _e('Yes, connect WordPress users accounts to LoudVoice', 'oa_loudvoice');?> <strong>(<?php _e('Recommended', 'oa_loudvoice')?>)</strong>
+                        </label><br />
                         <span class="description"><?php _e('Existing users of your blog can use their WordPress accounts to post comments with LoudVoice.', 'oa_loudvoice');?></span>
                     </td>
                 </tr>
                 <tr class="row_even">
                     <td class="row_multi">
-                        <input type="radio" id="oa_loudvoice_disable_author_sessions_1"
-                            name="oa_loudvoice_settings[disable_author_sessions]" value="1"
-                            <?php echo ($disable_author_sessions != 0 ? 'checked="checked"' : ''); ?> /> <label
-                            for="oa_loudvoice_disable_author_sessions_1"><?php _e('No, do not connect WordPress users to LoudVoice', 'oa_loudvoice');?></strong></label><br />
+                        <input type="radio" id="oa_loudvoice_disable_author_sessions_1" name="oa_loudvoice_settings[disable_author_sessions]" value="1" <?php echo ($disable_author_sessions != 0 ? 'checked="checked"' : ''); ?> />
+                        <label for="oa_loudvoice_disable_author_sessions_1">
+                            <?php _e('No, do not connect WordPress users to LoudVoice', 'oa_loudvoice');?></strong>
+                        </label><br />
                         <span class="description"><?php _e('Existing users can only post as guests or with their social network accounts.', 'oa_loudvoice');?></span>
                     </td>
                 </tr>

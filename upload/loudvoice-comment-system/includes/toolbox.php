@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Get date of last export
+ * Get date of last export.
  */
 function oa_louddvoice_last_export_date()
 {
@@ -9,7 +9,7 @@ function oa_louddvoice_last_export_date()
 }
 
 /**
- * Get date of last import
+ * Get date of last import.
  */
 function oa_louddvoice_last_import_date()
 {
@@ -18,7 +18,7 @@ function oa_louddvoice_last_import_date()
 
 
 /**
- * Returns the avatar for a given userid
+ * Returns the avatar for a given userid.
  */
 function oa_loudvoice_get_avatar_url($userid, $email)
 {
@@ -42,7 +42,7 @@ function oa_loudvoice_get_avatar_url($userid, $email)
 }
 
 /**
- * Return an author reference for a user/userid
+ * Return an author reference for a user/userid.
  */
 function oa_loudvoice_get_author_reference_for_user($mixed)
 {
@@ -64,7 +64,7 @@ function oa_loudvoice_get_author_reference_for_user($mixed)
  */
 
 /**
- * Returns the postid for a given token
+ * Returns the postid for a given token.
  */
 function oa_loudvoice_get_postid_for_token($token)
 {
@@ -90,7 +90,7 @@ function oa_loudvoice_get_postid_for_token($token)
 }
 
 /**
- * Return the reference of a post/postid
+ * Returns the reference of a post/postid.
  */
 function oa_loudvoice_get_reference_for_post($mixed)
 {
@@ -106,7 +106,7 @@ function oa_loudvoice_get_reference_for_post($mixed)
 }
 
 /**
- * Returns the post tokens to be deleted
+ * Returns the post tokens to be deleted.
  */
 function oa_loudvoice_get_post_tokens_to_delete()
 {
@@ -118,7 +118,7 @@ function oa_loudvoice_get_post_tokens_to_delete()
 }
 
 /**
- * Sets the to delete flag of a post_token
+ * Sets the to delete flag of a post_token.
  */
 function oa_loudvoice_set_to_delete_for_post_token($post_token, $to_delete)
 {
@@ -161,7 +161,7 @@ function oa_loudvoice_set_to_delete_for_post_token($post_token, $to_delete)
 }
 
 /**
- * Return the synchronization force flag of a post/postid
+ * Returns the synchronization force flag of a post/postid.
  */
 function oa_loudvoice_get_force_sync_for_post($mixed)
 {
@@ -180,7 +180,7 @@ function oa_loudvoice_get_force_sync_for_post($mixed)
 }
 
 /**
- * Sets the synchronization force flag of a post/postid
+ * Sets the synchronization force flag of a post/postid.
  */
 function oa_loudvoice_set_force_sync_for_post($mixed, $do_force_sync)
 {
@@ -205,7 +205,7 @@ function oa_loudvoice_set_force_sync_for_post($mixed, $do_force_sync)
 }
 
 /**
- * Sets the token of a post/postid
+ * Sets the token of a post/postid.
  */
 function oa_loudvoice_set_token_for_post($mixed, $token)
 {
@@ -228,7 +228,7 @@ function oa_loudvoice_set_token_for_post($mixed, $token)
 }
 
 /**
- * Returns the token for a post/postid
+ * Returns the token for a post/postid.
  */
 function oa_loudvoice_get_token_for_post($mixed)
 {
@@ -244,7 +244,7 @@ function oa_loudvoice_get_token_for_post($mixed)
 }
 
 /**
- * Set the synhronization time of a post/postid
+ * Sets the synhronization time of a post/postid.
  */
 function oa_loudvoice_set_time_sync_for_post($mixed, $time)
 {
@@ -267,7 +267,7 @@ function oa_loudvoice_set_time_sync_for_post($mixed, $time)
 }
 
 /**
- * Returns the synchronization time of a post/postid
+ * Returns the synchronization time of a post/postid.
  */
 function oa_loudvoice_get_time_sync_for_post($mixed)
 {
@@ -283,7 +283,7 @@ function oa_loudvoice_get_time_sync_for_post($mixed)
 }
 
 /**
- * Return a title of a post
+ * Returns the title of a post.
  */
 function oa_loudvoice_get_title_for_post($post)
 {
@@ -291,7 +291,7 @@ function oa_loudvoice_get_title_for_post($post)
 }
 
 /**
- * Return the is_closed status of a post/postid
+ * Returns the is_closed status of a post/postid.
  */
 function oa_loudvoice_get_is_closed_for_post($mixed)
 {
@@ -307,7 +307,7 @@ function oa_loudvoice_get_is_closed_for_post($mixed)
 }
 
 /**
- * Return the is_trashed status of a post/postid
+ * Returns the is_trashed status of a post/postid.
  */
 function oa_loudvoice_get_is_trashed_for_post($mixed)
 {
@@ -323,7 +323,7 @@ function oa_loudvoice_get_is_trashed_for_post($mixed)
 }
 
 /**
- * Return a link for a post/postid
+ * Returns the link of a post/postid.
  */
 function oa_loudvoice_get_link_for_post($mixed)
 {
@@ -346,7 +346,7 @@ function oa_loudvoice_get_link_for_post($mixed)
  */
 
 /**
- * Returns the commentid for a given token
+ * Returns the commentid for a given token.
  */
 function oa_loudvoice_get_commentid_for_token($token)
 {
@@ -372,7 +372,7 @@ function oa_loudvoice_get_commentid_for_token($token)
 }
 
 /**
- * Returns the WordPress status for a given LoudVoice comment
+ * Returns the WordPress status for a given LoudVoice comment.
  */
 function oa_loudvoice_wrap_status_for_lv_comment ($comment, $status)
 {
@@ -401,7 +401,7 @@ function oa_loudvoice_wrap_status_for_lv_comment ($comment, $status)
 }
 
 /**
- * Returns the LoudVoice status for a given WordPress comment
+ * Returns the LoudVoice status for a given WordPress comment.
  */
 function oa_loudvoice_wrap_status_for_wp_comment ($comment, $status)
 {
@@ -422,7 +422,7 @@ function oa_loudvoice_wrap_status_for_wp_comment ($comment, $status)
 }
 
 /**
- * Return a comment reference for a comment/commentid
+ * Returns a comment reference for a comment/commentid.
  */
 function oa_loudvoice_get_comment_reference_for_comment($mixed)
 {
@@ -438,7 +438,7 @@ function oa_loudvoice_get_comment_reference_for_comment($mixed)
 }
 
 /**
- * Return an author reference for a comment
+ * Returns an author reference for a comment.
  */
 function oa_loudvoice_get_author_reference_for_comment($comment)
 {
@@ -460,7 +460,7 @@ function oa_loudvoice_get_author_reference_for_comment($comment)
 }
 
 /**
- * Set the token of a comment/commentid
+ * Sets the token of a comment/commentid.
  */
 function oa_loudvoice_set_token_for_comment($mixed, $token)
 {
@@ -483,7 +483,7 @@ function oa_loudvoice_set_token_for_comment($mixed, $token)
 }
 
 /**
- * Return the token of a comment/commentid
+ * Returns the token of a comment/commentid.
  */
 function oa_loudvoice_get_token_for_comment($mixed)
 {
@@ -499,7 +499,7 @@ function oa_loudvoice_get_token_for_comment($mixed)
 }
 
 /**
- * Set the synchronization time of a comment/commentid
+ * Set the synchronization time of a comment/commentid.
  */
 function oa_loudvoice_set_time_sync_for_comment($mixed, $time)
 {
@@ -524,7 +524,7 @@ function oa_loudvoice_set_time_sync_for_comment($mixed, $time)
 }
 
 /**
- * Return the synchronization time of a comment/commentid
+ * Returns the synchronization time of a comment/commentid.
  */
 function oa_loudvoice_get_time_sync_for_comment($mixed)
 {
@@ -540,7 +540,7 @@ function oa_loudvoice_get_time_sync_for_comment($mixed)
 }
 
 /**
- * Return the synchronization force flag of a comment/commentid
+ * Returns the synchronization force flag of a comment/commentid.
  */
 function oa_loudvoice_get_force_sync_for_comment($mixed)
 {
@@ -560,7 +560,7 @@ function oa_loudvoice_get_force_sync_for_comment($mixed)
 }
 
 /**
- * Sets the synchronization force flag of a comment/commentid
+ * Sets the synchronization force flag of a comment/commentid.
  */
 function oa_loudvoice_set_force_sync_for_comment($mixed, $do_force_sync)
 {
@@ -585,7 +585,7 @@ function oa_loudvoice_set_force_sync_for_comment($mixed, $do_force_sync)
 }
 
 /**
- * Returns the comment tokens to be deleted
+ * Returns the comment tokens to be deleted.
  */
 function oa_loudvoice_get_comment_tokens_to_delete()
 {
@@ -597,7 +597,7 @@ function oa_loudvoice_get_comment_tokens_to_delete()
 }
 
 /**
- * Sets the to delete flag of a comment_token
+ * Sets the to delete flag of a comment_token.
  */
 function oa_loudvoice_set_to_delete_for_comment_token($comment_token, $to_delete)
 {
@@ -641,7 +641,7 @@ function oa_loudvoice_set_to_delete_for_comment_token($comment_token, $to_delete
 
 
 /**
- * Return the commentid for a given reference (eg. WP-ZJONY-COMMENT-1)
+ * Returns the commentid for a given reference (eg. WP-ZJONY-COMMENT-1).
  */
 function oa_loudvoice_get_commentid_for_reference($reference)
 {
@@ -655,7 +655,7 @@ function oa_loudvoice_get_commentid_for_reference($reference)
 }
 
 /**
- * Return the userid for a given reference (eg. WP-ZJONY-USER-1)
+ * Returns the userid for a given reference (eg. WP-ZJONY-USER-1).
  */
 function oa_loudvoice_get_userid_for_reference($reference)
 {
@@ -669,7 +669,7 @@ function oa_loudvoice_get_userid_for_reference($reference)
 }
 
 /**
- * Tests if required options are configured to display Loudvoice
+ * Tests if required options are configured to display LoudVoice.
  */
 function oa_louddvoice_is_setup()
 {
@@ -687,7 +687,7 @@ function oa_louddvoice_is_setup()
 }
 
 /**
- * Returns the realm of this LoudVoice installation
+ * Returns the realm of this LoudVoice installation.
  */
 function oa_loudvoice_get_realm()
 {
@@ -695,7 +695,7 @@ function oa_loudvoice_get_realm()
 }
 
 /**
- * Returns the unique identifier of this LoudVoice installation
+ * Returns the unique identifier of this LoudVoice installation.
  */
 function oa_loudvoice_uniqid()
 {
@@ -723,7 +723,7 @@ function oa_loudvoice_uniqid()
 }
 
 /**
- * Generates a unique id
+ * Generates a unique id.
  */
 function oa_loudvoice_generate_uniqid($length = 5)
 {
@@ -739,7 +739,7 @@ function oa_loudvoice_generate_uniqid($length = 5)
 }
 
 /**
- * Tests if the current connection is being made over http or https
+ * Tests if the current connection is being made over http or https.
  */
 function oa_loudvoice_is_https_on()
 {
@@ -771,7 +771,7 @@ function oa_loudvoice_is_https_on()
 }
 
 /**
- * Returns the user's ip address
+ * Returns the user's ip address.
  */
 function oa_loudvoice_get_user_ip()
 {
@@ -843,7 +843,7 @@ function oa_loudvoice_is_valid_uuid($uuid)
  */
 
 /**
- * Send an API request to the given endpoint
+ * Sends an API request to the given endpoint.
  */
 function oa_loudvoice_do_api_request_endpoint($endpoint, $api_opts = array())
 {
@@ -867,7 +867,7 @@ function oa_loudvoice_do_api_request_endpoint($endpoint, $api_opts = array())
 }
 
 /**
- * Sends an API request using the given handler
+ * Sends an API request using the given handler.
  */
 function oa_loudvoice_do_api_request($handler, $url, $opts = array (), $timeout = 25)
 {
@@ -899,7 +899,7 @@ function oa_loudvoice_do_api_request($handler, $url, $opts = array (), $timeout 
  */
 
 /**
- * Check if fsockopen is available.
+ * Checks if fsockopen is available.
  */
 function oa_loudvoice_check_fsockopen_available()
 {
@@ -921,7 +921,7 @@ function oa_loudvoice_check_fsockopen_available()
 }
 
 /**
- * Check if fsockopen is enabled and can be used to connect to OneAll.
+ * Checks if fsockopen is enabled and can be used to connect to OneAll.
  */
 function oa_loudvoice_check_fsockopen($secure = true)
 {
@@ -943,21 +943,21 @@ function oa_loudvoice_check_fsockopen($secure = true)
 }
 
 /**
- * Send an fsockopen request.
+ * Sends an fsockopen request.
  */
 function oa_loudvoice_fsockopen_request($url, $options = array (), $timeout = 15)
 {
-    // Store the result
+    // Store the result.
     $result = new stdClass();
 
-    // Make sure that this is a valid URL
+    // Make sure that this is a valid URL.
     if (($uri = parse_url($url)) === false)
     {
         $result->http_error = 'invalid_uri';
         return $result;
     }
 
-    // Check the scheme
+    // Check the scheme.
     if ($uri['scheme'] == 'https')
     {
         $port = (isset($uri['port']) ? $uri['port'] : 443);
@@ -973,50 +973,53 @@ function oa_loudvoice_fsockopen_request($url, $options = array (), $timeout = 15
         $url_prefix = '';
     }
 
-    // Construct the path to act on
+    // Construct the method to use.
+    $method = ( ! empty ($options['method']) ? strtoupper (trim ($options['method'])) : 'GET');
+
+    // Construct the path to act on.
     $path = (isset($uri['path']) ? $uri['path'] : '/') . (!empty($uri['query']) ? ('?' . $uri['query']) : '');
 
-    // HTTP Headers
+    // HTTP headers.
     $headers = array();
 
-    // We are using a proxy
+    // We are behind a proxy.
     if (!empty($options['proxy_url']) && !empty($options['proxy_port']))
     {
-        // Open Socket
+        // Open socket.
         $fp = @fsockopen($options['proxy_url'], $options['proxy_port'], $errno, $errstr, $timeout);
 
-        // Make sure that the socket has been opened properly
+        // Make sure that the socket has been opened properly.
         if (!$fp)
         {
             $result->http_error = trim($errstr);
             return $result;
         }
 
-        // HTTP Headers
-        $headers[] = "GET " . $url_protocol . $url . $path . " HTTP/1.0";
+        // HTTP headers.
+        $headers[] = $method . " " . $url_protocol . $url . $path . " HTTP/1.0";
         $headers[] = "Host: " . $url . ":" . $port;
 
-        // Proxy Authentication
+        // Proxy authentication.
         if (!empty($options['proxy_username']) && !empty($options['proxy_password']))
         {
             $headers[] = 'Proxy-Authorization: Basic ' . base64_encode($options['proxy_username'] . ":" . $options['proxy_password']);
         }
     }
-    // We are not using a proxy
+    // We are not behind a proxy.
     else
     {
-        // Open Socket
+        // Open socket.
         $fp = @fsockopen($url_prefix . $url, $port, $errno, $errstr, $timeout);
 
-        // Make sure that the socket has been opened properly
+        // Make sure that the socket has been opened properly.
         if (!$fp)
         {
             $result->http_error = trim($errstr);
             return $result;
         }
 
-        // HTTP Headers
-        $headers[] = "GET " . $path . " HTTP/1.0";
+        // HTTP headers.
+        $headers[] = $method." " . $path . " HTTP/1.0";
         $headers[] = "Host: " . $url;
     }
 
@@ -1026,8 +1029,22 @@ function oa_loudvoice_fsockopen_request($url, $options = array (), $timeout = 15
         $headers[] = 'Authorization: Basic ' . base64_encode($options['api_key'] . ":" . $options['api_secret']);
     }
 
-    // Build and send request
+    // Post data.
+    if (!empty($options['post_data']))
+    {
+        $headers[] = "Content-Length: " . strlen ($options['post_data']);
+    }
+
+    $headers[] = "Connection: close";
+
+    // Send request.
     fwrite($fp, (implode("\r\n", $headers) . "\r\n\r\n"));
+
+    // Send data.
+    if (!empty($options['post_data']))
+    {
+        fwrite($fp, $options['post_data']);
+    }
 
     // Fetch response
     $response = '';
@@ -1061,7 +1078,7 @@ function oa_loudvoice_fsockopen_request($url, $options = array (), $timeout = 15
  */
 
 /**
- * Check if cURL has been loaded and is enabled.
+ * Check if CURL has been loaded and is enabled.
  */
 function oa_loudvoice_check_curl_available()
 {
@@ -1083,7 +1100,7 @@ function oa_loudvoice_check_curl_available()
 }
 
 /**
- * Check if CURL is available and can be used to connect to OneAll
+ * Checks if CURL is available and can be used to connect to OneAll.
  */
 function oa_loudvoice_check_curl($secure = true)
 {
@@ -1105,7 +1122,7 @@ function oa_loudvoice_check_curl($secure = true)
 }
 
 /**
- * Send a CURL request.
+ * Sends a CURL request.
  */
 function oa_loudvoice_curl_request($url, $options = array (), $timeout = 15)
 {

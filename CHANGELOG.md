@@ -4,21 +4,24 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [2.1.1] - 2018-04-03
 ### Fixes
- * Account synchronisation with the loudvoice host website
+* Comment synchronization improved
+* User connections fixed
+* Link fixed in comments page
+* New providers added
 
 ## [2.1.0] - 2017-12-11
 ### Fixes
-OneAll app link in WP comments page edited
+* OneAll app link in WP comments page edited
 ### Added
-New providers added :
-- Discord
-- Draugiem
-- Foursquare 
-- Line
-- Meetup
-- PixelPin
-- Skyrock.com
-- SoundCloud
-- Tumblr
-- Weibo
-- Xing
+* New providers added :
+    - Discord
+    - Draugiem
+    - Foursquare 
+    - Line
+    - Meetup
+    - PixelPin
+    - Skyrock.com
+    - SoundCloud
+    - Tumblr
+    - Weibo
+    - Xing

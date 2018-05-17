@@ -16,7 +16,7 @@ add_action('wp_ajax_oa_loudvoice_import_cleanup', 'oa_loudvoice_import_cleanup_a
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Deletes a single comment from LoudVoice
+ * Deletes a single comment from LoudVoice.
  */
 function oa_loudvoice_delete_comment_token(&$logs, $comment_token, $log_prefix = '      ')
 {
@@ -67,7 +67,7 @@ function oa_loudvoice_delete_comment_token(&$logs, $comment_token, $log_prefix =
 }
 
 /**
- * Deletes a single post from LoudVoice
+ * Deletes a single post from LoudVoice.
  */
 function oa_loudvoice_delete_post_token(&$logs, $post_token, $log_prefix = '      ')
 {
@@ -118,7 +118,7 @@ function oa_loudvoice_delete_post_token(&$logs, $post_token, $log_prefix = '    
 }
 
 /**
- * Exports Cleanup
+ * Exports Cleanup.
  */
 function oa_loudvoice_export_cleanup_ajax()
 {
@@ -472,7 +472,7 @@ function oa_loudvoice_export_commentid(&$logs, $commentid, $log_prefix = '      
                                 'comment_token' => $comment_token,
                                 'comment_reference' => oa_loudvoice_get_comment_reference_for_comment($comment),
                                 'allow_create_comment_reference' => true,
-                                'allow_create_duplicate_comments' => true,
+                                'allow_duplicate_comments' => true,
                                 'is_spam' => oa_loudvoice_wrap_status_for_wp_comment ($comment, 'is_spam'),
                                 'is_trashed' => oa_loudvoice_wrap_status_for_wp_comment ($comment, 'is_trashed'),
                                 'has_been_approved' => oa_loudvoice_wrap_status_for_wp_comment ($comment, 'has_been_approved'),

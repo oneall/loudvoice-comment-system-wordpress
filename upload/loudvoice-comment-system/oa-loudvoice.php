@@ -3,7 +3,7 @@
 Plugin Name: LoudVoice Comment System
 Plugin URI: http://www.oneall.com/
 Description: LoudVoice replaces the basic WordPress comments by a <strong>powerful comment system</strong> that includes logging in with 30+ social networks, spam filters and automatic backups.
-Version: 2.1.0
+Version: 2.1.1
 Author: OneAll <support@oneall.com>
 Author URI: http://www.oneall.com/
 License: GPL2
@@ -29,7 +29,7 @@ function oa_loudvoice_activate()
 register_activation_hook(__FILE__, 'oa_loudvoice_activate');
 
 /**
- * Add Setup Link
+ * Add setup link.
  */
 function oa_loudvoice_add_setup_link($links, $file)
 {
@@ -51,7 +51,7 @@ function oa_loudvoice_add_setup_link($links, $file)
 add_filter('plugin_action_links', 'oa_loudvoice_add_setup_link', 10, 2);
 
 /**
- * Include required files
+ * Include required files.
  */
 require_once dirname(__FILE__) . '/includes/settings.php';
 require_once dirname(__FILE__) . '/includes/toolbox.php';
@@ -61,7 +61,7 @@ require_once dirname(__FILE__) . '/includes/frontend.php';
 require_once dirname(__FILE__) . '/includes/backend.php';
 
 /**
- * Add language file
+ * Add language file.
  */
 if (function_exists('load_plugin_textdomain'))
 {

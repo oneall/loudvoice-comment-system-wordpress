@@ -1,4 +1,4 @@
-# LoudVoice 2.1.0 for WordPress 3.0+
+# LoudVoice 2.1.1 for WordPress 3.0+
 LoudVoice replaces the basic WordPress comments by a **powerful comment system** that includes logging in with 
 35+ social networks, spam filters and more.
  
@@ -14,7 +14,7 @@ https://wordpress.org/plugins/loudvoice-comment-system/
 
 
 ## Features
-* Post as guest or login with 30+ social networks
+* Post as guest or login with 35+ social networks
 * Comments are indexable by search engines and optimized for SEO
 * Existing comments can be imported
 * New comments are automatically synchronized with your WordPress database
